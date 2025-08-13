@@ -1,0 +1,178 @@
+[
+  {
+    "code": "ILE",
+    "fullName": "Intuitive Logical Extravert",
+    "alias": "ENTp",
+    "quadra": "Alpha",
+    "temperament": "EP",
+    "leading": "Ne",
+    "creative": "Ti",
+    "overview": "Intuitive Logical Extratim",
+    "href": "https://wikisocion.github.io/content/ILE.html"
+  },
+  {
+    "code": "SEI",
+    "fullName": "Sensing Ethical Introvert",
+    "alias": "ISFp",
+    "quadra": "Alpha",
+    "temperament": "IJ",
+    "leading": "Si",
+    "creative": "Fe",
+    "overview": "Sensing Ethical Introtim",
+    "href": "https://wikisocion.github.io/content/SEI.html"
+  },
+  {
+    "code": "LII",
+    "fullName": "Logical Intuitive Introvert",
+    "alias": "INTj",
+    "quadra": "Alpha",
+    "temperament": "IJ",
+    "leading": "Ti",
+    "creative": "Ne",
+    "overview": "Logical Intuitive Introtim",
+    "href": "https://wikisocion.github.io/content/LII.html"
+  },
+  {
+    "code": "ESE",
+    "fullName": "Ethical Sensing Extravert",
+    "alias": "ESFj",
+    "quadra": "Alpha",
+    "temperament": "EJ",
+    "leading": "Fe",
+    "creative": "Si",
+    "overview": "Ethical Sensing Extratim",
+    "href": "https://wikisocion.github.io/content/ESE.html"
+  },
+  {
+    "code": "SLE",
+    "fullName": "Sensing Logical Extravert",
+    "alias": "ESTp",
+    "quadra": "Beta",
+    "temperament": "EP",
+    "leading": "Se",
+    "creative": "Ti",
+    "overview": "Sensing Logical Extratim",
+    "href": "https://wikisocion.github.io/content/SLE.html"
+  },
+  {
+    "code": "IEI",
+    "fullName": "Intuitive Ethical Introvert",
+    "alias": "INFp",
+    "quadra": "Beta",
+    "temperament": "IP",
+    "leading": "Ni",
+    "creative": "Fe",
+    "overview": "Intuitive Ethical Introtim",
+    "href": "https://wikisocion.github.io/content/IEI.html"
+  },
+  {
+    "code": "LSI",
+    "fullName": "Logical Sensing Introvert",
+    "alias": "ISTj",
+    "quadra": "Beta",
+    "temperament": "IJ",
+    "leading": "Ti",
+    "creative": "Se",
+    "overview": "Logical Sensing Introtim",
+    "href": "https://wikisocion.github.io/content/LSI.html"
+  },
+  {
+    "code": "EIE",
+    "fullName": "Ethical Intuitive Extravert",
+    "alias": "ENFj",
+    "quadra": "Beta",
+    "temperament": "EJ",
+    "leading": "Fe",
+    "creative": "Ni",
+    "overview": "Ethical Intuitive Extratim",
+    "href": "https://wikisocion.github.io/content/EIE.html"
+  },
+  {
+    "code": "SEE",
+    "fullName": "Sensing Ethical Extravert",
+    "alias": "ESFp",
+    "quadra": "Gamma",
+    "temperament": "EP",
+    "leading": "Se",
+    "creative": "Fi",
+    "overview": "Sensing Ethical Extratim",
+    "href": "https://wikisocion.github.io/content/SEE.html"
+  },
+  {
+    "code": "ILI",
+    "fullName": "Intuitive Logical Introvert",
+    "alias": "INTp",
+    "quadra": "Gamma",
+    "temperament": "IP",
+    "leading": "Ni",
+    "creative": "Te",
+    "overview": "Intuitive Logical Introtim",
+    "href": "https://wikisocion.github.io/content/ILI.html"
+  },
+  {
+    "code": "ESI",
+    "fullName": "Ethical Sensing Introvert",
+    "alias": "ISFj",
+    "quadra": "Gamma",
+    "temperament": "IJ",
+    "leading": "Fi",
+    "creative": "Se",
+    "overview": "Ethical Sensing Introtim",
+    "href": "https://wikisocion.github.io/content/ESI.html"
+  },
+  {
+    "code": "LIE",
+    "fullName": "Logical Intuitive Extravert",
+    "alias": "ENTj",
+    "quadra": "Gamma",
+    "temperament": "EJ",
+    "leading": "Te",
+    "creative": "Ni",
+    "overview": "Logical Intuitive Extratim",
+    "href": "https://wikisocion.github.io/content/LIE.html"
+  },
+  {
+    "code": "LSE",
+    "fullName": "Logical Sensing Extravert",
+    "alias": "ESTj",
+    "quadra": "Delta",
+    "temperament": "EJ",
+    "leading": "Te",
+    "creative": "Si",
+    "overview": "Logical Sensing Extratim",
+    "href": "https://wikisocion.github.io/content/LSE.html"
+  },
+  {
+    "code": "EII",
+    "fullName": "Ethical Intuitive Introvert",
+    "alias": "INFj",
+    "quadra": "Delta",
+    "temperament": "IJ",
+    "leading": "Fi",
+    "creative": "Ne",
+    "overview": "Ethical Intuitive Introtim",
+    "href": "https://wikisocion.github.io/content/EII.html"
+  },
+  {
+    "code": "SLI",
+    "fullName": "Sensing Logical Introvert",
+    "alias": "ISTp",
+    "quadra": "Delta",
+    "temperament": "IP",
+    "leading": "Si",
+    "creative": "Te",
+    "overview": "Sensing Logical Introtim",
+    "href": "https://wikisocion.github.io/content/SLI.html"
+  },
+  {
+    "code": "IEE",
+    "fullName": "Intuitive Ethical Extravert",
+    "alias": "ENFp",
+    "quadra": "Delta",
+    "temperament": "EP",
+    "leading": "Ne",
+    "creative": "Fi",
+    "overview": "Intuitive Ethical Extratim",
+    "href": "https://wikisocion.github.io/content/IEE.html"
+  }
+]

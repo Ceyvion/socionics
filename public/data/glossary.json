@@ -1,0 +1,34 @@
+[
+  {
+    "term": "Ne",
+    "shortDef": "Extroverted intuition - possibilities, patterns, divergence."
+  },
+  {
+    "term": "Ni",
+    "shortDef": "Introverted intuition - time, trajectories, convergence."
+  },
+  {
+    "term": "Se",
+    "shortDef": "Extroverted sensing - force, assertion, control of space."
+  },
+  {
+    "term": "Si",
+    "shortDef": "Introverted sensing - comfort, calibration, bodily states."
+  },
+  {
+    "term": "Te",
+    "shortDef": "Extroverted logic - efficiency, metrics, execution."
+  },
+  {
+    "term": "Ti",
+    "shortDef": "Introverted logic - structure, definitions, consistency."
+  },
+  {
+    "term": "Fe",
+    "shortDef": "Extroverted ethics - shared feeling, expression, morale."
+  },
+  {
+    "term": "Fi",
+    "shortDef": "Introverted ethics - bonds, values, personal distance."
+  }
+]
