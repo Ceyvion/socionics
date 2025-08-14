@@ -213,6 +213,8 @@ export default function WikisocionMVP() {
         {route.name === "type" && <TypeDetail types={types} duals={DUALS} code={route.code} onBack={() => navigate("types")} />}
         {route.name === "relations" && <Relations types={types} duals={DUALS} relations={relations} onNav={navigate} />}
         {route.name === "theory" && <Theory onNav={navigate} />}
+        {route.name === "functions" && <FunctionExplorer glossary={glossary} types={types} />}
+        {route.name === "compare" && <TypeCompare types={types} duals={DUALS} />}
         {route.name === "glossary" && <Glossary glossary={glossary} focus={route.focus} />}
         {route.name === "library" && <Library />}
         {route.name === "about" && <About />}
@@ -242,7 +244,9 @@ function TopBar({ onNav, query, setQuery, searchRef, onResult, results, darkMode
             ["Start", "start"],
             ["Types", "types"],
             ["Relations", "relations"],
+            ["Compare", "compare"],
             ["Theory", "theory"],
+            ["Functions", "functions"],
             ["Glossary", "glossary"],
             ["Library", "library"],
             ["About", "about"],
@@ -903,6 +907,17 @@ function TypeDetail({ types, duals, code, onBack }) {
     nuances: "Type-specific nuances and caveats"
   };
   
+  // Find related types (duals, same quadra, etc.)
+  const dualPair = Array.from(duals).find(pair => pair.includes(code));
+  const dualCode = dualPair ? dualPair.split("-").find(c => c !== code) : null;
+  const dualType = dualCode ? byCode[dualCode] : null;
+  
+  const sameQuadra = types.filter(type => type.quadra === t.quadra && type.code !== code);
+  const sameTemperament = types.filter(type => type.temperament === t.temperament && type.code !== code);
+  
+  // Find types with same leading function
+  const sameLeading = types.filter(type => type.leading === t.leading && type.code !== code);
+  
   return (
     <section className="pt-10">
       <button
@@ -1015,6 +1030,61 @@ function TypeDetail({ types, duals, code, onBack }) {
               Key relations for {t.code}
             </p>
             <DualityList types={types} duals={duals} self={t.code} />
+            
+            {/* Additional relations */}
+            <div className="mt-4">
+              <h4 className="font-medium dark:text-gray-300 text-neutral-800">Same Quadra</h4>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {sameQuadra.map(type => (
+                  <button
+                    key={type.code}
+                    onClick={() => {
+                      onBack();
+                      setTimeout(() => window.location.hash = `#/type/${type.code}`, 100);
+                    }}
+                    className="text-xs px-2 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded"
+                  >
+                    {type.code}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="mt-4">
+              <h4 className="font-medium dark:text-gray-300 text-neutral-800">Same Temperament</h4>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {sameTemperament.map(type => (
+                  <button
+                    key={type.code}
+                    onClick={() => {
+                      onBack();
+                      setTimeout(() => window.location.hash = `#/type/${type.code}`, 100);
+                    }}
+                    className="text-xs px-2 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded"
+                  >
+                    {type.code}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="mt-4">
+              <h4 className="font-medium dark:text-gray-300 text-neutral-800">Same Leading Function</h4>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {sameLeading.map(type => (
+                  <button
+                    key={type.code}
+                    onClick={() => {
+                      onBack();
+                      setTimeout(() => window.location.hash = `#/type/${type.code}`, 100);
+                    }}
+                    className="text-xs px-2 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded"
+                  >
+                    {type.code}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </aside>
       </div>
@@ -1091,15 +1161,64 @@ function Relations({ types, duals, relations, onNav }) {
   const [a, setA] = useState("ILE");
   const [b, setB] = useState("SEI");
 
+  // Get relation data
   const pairKey = [a, b].sort().join("-");
   const isDual = duals.has(pairKey);
   const relation = relations.find(r => r.name === "Duality" && [r.a, r.b].sort().join("-") === pairKey);
 
+  // Calculate additional relation types
+  const byCode = Object.fromEntries(types.map((t) => [t.code, t]));
+  const typeA = byCode[a];
+  const typeB = byCode[b];
+  
+  // Determine relation types
+  const isIdentity = a === b;
+  const isDualSame = isDual;
+  
+  // Same quadra relation
+  const isSameQuadra = typeA.quadra === typeB.quadra;
+  
+  // Temperament relations
+  const isSameTemperament = typeA.temperament === typeB.temperament;
+  
+  // Function relations
+  const isSameLeading = typeA.leading === typeB.leading;
+  const isSameCreative = typeA.creative === typeB.creative;
+  
+  // Activator relation (leading/creative reversed)
+  const isActivator = typeA.leading === typeB.creative && typeA.creative === typeB.leading;
+  
+  // Mirror relation (same leading/creative but different type)
+  const isMirror = isSameLeading && isSameCreative && !isIdentity;
+  
+  // Semi-dual relation (leading of one is creative of other)
+  const isSemiDual = (typeA.leading === typeB.creative && !isActivator) || 
+                    (typeB.leading === typeA.creative && !isActivator);
+  
+  // Extinguishment relation (conflict with functions)
+  const isExtinguishment = (typeA.leading === typeB.leading && !isIdentity) ||
+                          (typeA.creative === typeB.creative && !isMirror);
+  
+  // Business relation (quadra neighbors)
+  const quadraOrder = ["Alpha", "Beta", "Gamma", "Delta"];
+  const aQuadraIndex = quadraOrder.indexOf(typeA.quadra);
+  const bQuadraIndex = quadraOrder.indexOf(typeB.quadra);
+  const quadraDiff = Math.abs(aQuadraIndex - bQuadraIndex);
+  const isBusiness = (quadraDiff === 1 || quadraDiff === 3) && 
+                    !isDual && !isSemiDual && !isExtinguishment;
+  
+  // Super-ego relation (remaining types)
+  const isSuperEgo = !isIdentity && !isDualSame && !isSameQuadra && !isActivator && 
+                    !isMirror && !isSemiDual && !isExtinguishment && !isBusiness;
+  
+  // Conflict relation (quadra opposites)
+  const isConflict = (quadraDiff === 2) && !isSameQuadra && !isDualSame;
+
   return (
-    <section className="pt-10 max-w-3xl">
+    <section className="pt-10">
       <h1 className="text-3xl font-semibold tracking-tight dark:text-gray-200">Relations</h1>
       <p className="mt-2 dark:text-gray-400 text-neutral-700">
-        Pick two types to see the relation name. MVP recognizes duality pairs; full 16x16 matrix is planned for v1.1.
+        Explore the relationships between socionics types. Select two types to see their connection.
       </p>
 
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1108,20 +1227,110 @@ function Relations({ types, duals, relations, onNav }) {
       </div>
 
       <div className="mt-6 border border-neutral-300 p-6 dark:border-gray-700">
-        <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Relation</div>
+        <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Primary Relation</div>
         <div className="mt-1 text-2xl font-semibold dark:text-gray-300">
-          {isDual ? "Duality" : "(More relations coming soon)"}
+          {isIdentity ? "Identity" : 
+           isDualSame ? "Duality" : 
+           isActivator ? "Activation" : 
+           isMirror ? "Mirror" : 
+           isSemiDual ? "Semi-duality" : 
+           isExtinguishment ? "Extinguishment" : 
+           isConflict ? "Conflict" : 
+           isBusiness ? "Business" : 
+           isSuperEgo ? "Super-ego" : 
+           "Other"}
         </div>
-        <div className="mt-2 dark:text-gray-400 text-neutral-700 max-w-prose">
-          {isDual && relation ? (
-            <p>
-              {relation.summary}
-            </p>
-          ) : (
-            <p>
-              We will surface Activity, Supervision, Conflict, and more in the next release with a full, auditable mapping.
-            </p>
-          )}
+        
+        <div className="mt-4">
+          <h3 className="font-semibold dark:text-gray-300">Relation Characteristics</h3>
+          <ul className="mt-2 space-y-2 text-sm dark:text-gray-400 text-neutral-700">
+            {isIdentity && (
+              <li>• Same type - complete understanding but potential for stagnation</li>
+            )}
+            {isDualSame && relation && (
+              <li>• {relation.summary}</li>
+            )}
+            {isActivator && (
+              <li>• Stimulating but exhausting relationship; each activates the other's suggestive function</li>
+            )}
+            {isMirror && (
+              <li>• Similar approach but different perspective; can be either very comfortable or frustrating</li>
+            )}
+            {isSemiDual && (
+              <li>• Partially complementary; one benefits more than the other</li>
+            )}
+            {isExtinguishment && (
+              <li>• Functions clash; can be challenging but also growth-promoting</li>
+            )}
+            {isConflict && (
+              <li>• Opposite values; naturally irritating but can learn from each other</li>
+            )}
+            {isBusiness && (
+              <li>• Quadra neighbors; share some values but have different approaches</li>
+            )}
+            {isSuperEgo && (
+              <li>• Complex relationship; both similar and different in challenging ways</li>
+            )}
+          </ul>
+        </div>
+        
+        <div className="mt-4">
+          <h3 className="font-semibold dark:text-gray-300">Shared Traits</h3>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {isSameQuadra && (
+              <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded dark:bg-red-900 dark:text-red-100">
+                Same Quadra ({typeA.quadra})
+              </span>
+            )}
+            {isSameTemperament && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded dark:bg-blue-900 dark:text-blue-100">
+                Same Temperament ({typeA.temperament})
+              </span>
+            )}
+            {isSameLeading && (
+              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded dark:bg-green-900 dark:text-green-100">
+                Same Leading Function ({typeA.leading})
+              </span>
+            )}
+            {isSameCreative && (
+              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded dark:bg-yellow-900 dark:text-yellow-100">
+                Same Creative Function ({typeA.creative})
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Visual relationship diagram */}
+      <div className="mt-6 border border-neutral-300 p-6 dark:border-gray-700">
+        <h2 className="text-xl font-semibold dark:text-gray-300">Function Comparison</h2>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="border border-neutral-300 p-4 dark:border-gray-700">
+            <h3 className="font-mono text-lg dark:text-gray-300">{a} Functions</h3>
+            <div className="mt-2 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span>Leading:</span>
+                <span className="font-mono">{typeA.leading}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Creative:</span>
+                <span className="font-mono">{typeA.creative}</span>
+              </div>
+            </div>
+          </div>
+          <div className="border border-neutral-300 p-4 dark:border-gray-700">
+            <h3 className="font-mono text-lg dark:text-gray-300">{b} Functions</h3>
+            <div className="mt-2 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span>Leading:</span>
+                <span className="font-mono">{typeB.leading}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Creative:</span>
+                <span className="font-mono">{typeB.creative}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -1147,13 +1356,13 @@ function Select({ types, label, value, setValue }) {
   );
 }
 
-function Theory() {
+function Theory({ onNav }) {
   return (
     <section className="pt-10">
       <h1 className="text-3xl font-semibold tracking-tight dark:text-gray-200">Theory</h1>
       <div className="mt-6 grid md:grid-cols-3 gap-3">
         <TheoryCard title="Model A" summary="Eight function positions; leading and creative guide the stack." />
-        <TheoryCard title="Information Elements" summary="Ne, Ni, Se, Si, Te, Ti, Fe, Fi as channels of information." />
+        <TheoryCard title="Information Elements" summary="Ne, Ni, Se, Si, Te, Ti, Fe, Fi as channels of information." onCTAClick={() => onNav("functions")} ctaLabel="Explore Functions" />
         <TheoryCard title="Quadras" summary="Four cultures of values: Alpha, Beta, Gamma, Delta." />
       </div>
       <p className="mt-6 text-sm dark:text-gray-400 text-neutral-700">
@@ -1163,12 +1372,115 @@ function Theory() {
   );
 }
 
-function TheoryCard({ title, summary }) {
+function FunctionExplorer({ glossary, types }) {
+  const [selectedFunction, setSelectedFunction] = useState("Ne");
+  
+  // Group types by their leading function
+  const typesByLeadingFunction = types.reduce((acc, type) => {
+    if (!acc[type.leading]) {
+      acc[type.leading] = [];
+    }
+    acc[type.leading].push(type);
+    return acc;
+  }, {});
+  
+  // Group types by their creative function
+  const typesByCreativeFunction = types.reduce((acc, type) => {
+    if (!acc[type.creative]) {
+      acc[type.creative] = [];
+    }
+    acc[type.creative].push(type);
+    return acc;
+  }, {});
+  
+  const functionDetails = glossary.find(g => g.term === selectedFunction);
+  
   return (
-    <div className="border border-neutral-300 p-4 hover:bg-neutral-50 dark:border-gray-700 dark:hover:bg-gray-800">
+    <section className="pt-10">
+      <h1 className="text-3xl font-semibold tracking-tight dark:text-gray-200">Function Explorer</h1>
+      <p className="mt-2 dark:text-gray-400 text-neutral-700">
+        Explore the eight information elements and see which types value them most.
+      </p>
+      
+      <div className="mt-6">
+        <div className="flex flex-wrap gap-2">
+          {glossary.map(func => (
+            <button
+              key={func.term}
+              onClick={() => setSelectedFunction(func.term)}
+              className={cls(
+                "px-3 py-1 text-sm rounded",
+                selectedFunction === func.term 
+                  ? "bg-red-600 text-white" 
+                  : "bg-neutral-100 text-neutral-800 hover:bg-neutral-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              )}
+            >
+              {func.term}
+            </button>
+          ))}
+        </div>
+      </div>
+      
+      <div className="mt-6 border border-neutral-300 p-6 dark:border-gray-700">
+        <h2 className="text-2xl font-semibold dark:text-gray-300">
+          {selectedFunction}: {functionDetails?.shortDef.split(" - ")[1] || ""}
+        </h2>
+        <p className="mt-2 dark:text-gray-400 text-neutral-700">
+          {functionDetails?.shortDef}
+        </p>
+        
+        <div className="mt-6 grid md:grid-cols-2 gap-6">
+          <div>
+            <h3 className="text-lg font-semibold dark:text-gray-300">Types with {selectedFunction} as Leading Function</h3>
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {(typesByLeadingFunction[selectedFunction] || []).map(type => (
+                <a
+                  key={type.code}
+                  href={`#/type/${type.code}`}
+                  className="border border-neutral-300 p-3 text-center hover:bg-neutral-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                >
+                  <div className="font-mono text-lg">{type.code}</div>
+                  <div className="text-xs mt-1 dark:text-gray-400">{type.alias}</div>
+                </a>
+              ))}
+            </div>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-semibold dark:text-gray-300">Types with {selectedFunction} as Creative Function</h3>
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {(typesByCreativeFunction[selectedFunction] || []).map(type => (
+                <a
+                  key={type.code}
+                  href={`#/type/${type.code}`}
+                  className="border border-neutral-300 p-3 text-center hover:bg-neutral-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                >
+                  <div className="font-mono text-lg">{type.code}</div>
+                  <div className="text-xs mt-1 dark:text-gray-400">{type.alias}</div>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TheoryCard({ title, summary, onCTAClick, ctaLabel }) {
+  return (
+    <div className="border border-neutral-300 p-4 hover:bg-neutral-50 dark:border-gray-700 dark:hover:bg-gray-800 flex flex-col h-full">
       <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Primer</div>
       <div className="text-xl font-semibold dark:text-gray-300">{title}</div>
-      <p className="mt-1 text-neutral-700 text-sm dark:text-gray-400">{summary}</p>
+      <p className="mt-1 text-neutral-700 text-sm dark:text-gray-400 flex-grow">{summary}</p>
+      {onCTAClick && (
+        <button 
+          onClick={onCTAClick}
+          className="mt-3 text-sm text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400"
+        >
+          {ctaLabel || "Learn more"}
+        </button>
+      )}
     </div>
   );
 }
@@ -1272,53 +1584,282 @@ function About() {
 
 function StartHere({ onNav }) {
   const [step, setStep] = useState(1);
-  const next = () => setStep((s) => Math.min(4, s + 1));
+  const totalSteps = 4;
+  const progress = (step / totalSteps) * 100;
+  
+  const next = () => setStep((s) => Math.min(totalSteps, s + 1));
   const prev = () => setStep((s) => Math.max(1, s - 1));
+
+  // Step content with enhanced descriptions
+  const steps = [
+    {
+      title: "Model A in one minute",
+      description: "Eight function positions. Two do the heavy lifting: Leading (your default lens) and Creative (your flexible tool).",
+      details: "Your Leading function is how you naturally see the world, while your Creative function is your adaptable tool for problem-solving."
+    },
+    {
+      title: "Information elements (the \"alphabet\")",
+      description: "Ne/Ni (intuition), Se/Si (sensing), Te/Ti (logic), Fe/Fi (ethics). Each type values some over others.",
+      details: "Think of these as different lenses for processing information - some focus on possibilities, others on facts."
+    },
+    {
+      title: "Skim types - spot your pattern",
+      description: "Browse the 16 cards. Which overview sounds like how you work by default? Open 2-3 candidates.",
+      details: "Don't worry about getting it perfect on the first try - socionics is about understanding patterns in yourself."
+    },
+    {
+      title: "Relations are about fit of values",
+      description: "Some pairs feel effortless (duality); others are energizing or challenging. Use relations as a lens, not a verdict.",
+      details: "Relationship compatibility in socionics is about complementary strengths, not just shared interests."
+    }
+  ];
 
   return (
     <section className="pt-10 max-w-3xl">
       <h1 className="text-3xl font-semibold tracking-tight dark:text-gray-200">Start here</h1>
+      
+      {/* Progress bar */}
+      <div className="mt-6 w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+        <div 
+          className="bg-red-600 h-1.5 rounded-full transition-all duration-500 ease-in-out" 
+          style={{ width: `${progress}%` }}
+        ></div>
+      </div>
+      <div className="text-right text-xs text-gray-500 dark:text-gray-400 mt-1">
+        Step {step} of {totalSteps}
+      </div>
+
       <ol className="mt-6 space-y-4 text-neutral-800 dark:text-gray-300">
-        <li className={cls("border p-4", step === 1 ? "border-red-600 dark:border-red-500" : "border-neutral-300 dark:border-gray-700")}>
-          <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Step 1</div>
-          <div className="text-lg font-semibold">Model A in one minute</div>
-          <p className="mt-1 text-sm dark:text-gray-400">
-            Eight function positions. Two do the heavy lifting: <b>Leading</b> (your default lens) and <b>Creative</b> (your flexible tool).
-          </p>
-        </li>
-        <li className={cls("border p-4", step === 2 ? "border-red-600 dark:border-red-500" : "border-neutral-300 dark:border-gray-700")}>
-          <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Step 2</div>
-          <div className="text-lg font-semibold">Information elements (the "alphabet")</div>
-          <p className="mt-1 text-sm dark:text-gray-400">
-            Ne/Ni (intuition), Se/Si (sensing), Te/Ti (logic), Fe/Fi (ethics). Each type values some over others.
-          </p>
-        </li>
-        <li className={cls("border p-4", step === 3 ? "border-red-600 dark:border-red-500" : "border-neutral-300 dark:border-gray-700")}>
-          <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Step 3</div>
-          <div className="text-lg font-semibold">Skim types - spot your pattern</div>
-          <p className="mt-1 text-sm dark:text-gray-400">
-            Browse the 16 cards. Which overview sounds like how you work by default? Open 2-3 candidates.
-          </p>
-        </li>
-        <li className={cls("border p-4", step === 4 ? "border-red-600 dark:border-red-500" : "border-neutral-300 dark:border-gray-700")}>
-          <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Step 4</div>
-          <div className="text-lg font-semibold">Relations are about fit of values</div>
-          <p className="mt-1 text-sm dark:text-gray-400">
-            Some pairs feel effortless (duality); others are energizing or challenging. Use relations as a lens, not a verdict.
-          </p>
-        </li>
+        {steps.map((s, index) => (
+          <li 
+            key={index}
+            className={cls(
+              "border p-4 rounded transition-all duration-300",
+              step === index + 1 
+                ? "border-red-600 dark:border-red-500 shadow-sm" 
+                : "border-neutral-300 dark:border-gray-700 opacity-80"
+            )}
+          >
+            <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Step {index + 1}</div>
+            <div className="text-lg font-semibold">{s.title}</div>
+            <p className="mt-1 text-sm dark:text-gray-400">
+              {s.description}
+            </p>
+            {step === index + 1 && (
+              <p className="mt-2 text-sm italic dark:text-gray-500">
+                {s.details}
+              </p>
+            )}
+          </li>
+        ))}
       </ol>
 
       <div className="mt-6 flex items-center gap-3">
-        <button onClick={prev} className="px-3 py-1 border border-neutral-300 text-sm dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800" disabled={step === 1}>
+        <button 
+          onClick={prev} 
+          className="px-3 py-1 border border-neutral-300 text-sm dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 rounded transition-colors"
+          disabled={step === 1}
+        >
           Back
         </button>
-        <button onClick={next} className="px-3 py-1 bg-red-600 text-white text-sm hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800" disabled={step === 4}>
+        <button 
+          onClick={next} 
+          className="px-3 py-1 bg-red-600 text-white text-sm hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 rounded transition-colors"
+          disabled={step === totalSteps}
+        >
           Next
         </button>
-        <button onClick={() => onNav("types")} className="ml-auto px-3 py-1 border border-neutral-300 text-sm dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
-          Go to Types
-        </button>
+        {step === totalSteps && (
+          <button 
+            onClick={() => onNav("types")} 
+            className="ml-auto px-3 py-1 bg-red-600 text-white text-sm hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 rounded transition-all duration-300 transform hover:scale-105 flex items-center gap-1"
+          >
+            Explore Types <ArrowRight className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function TypeCompare({ types, duals }) {
+  const [typeA, setTypeA] = useState("ILE");
+  const [typeB, setTypeB] = useState("SEI");
+  
+  const byCode = Object.fromEntries(types.map((t) => [t.code, t]));
+  const a = byCode[typeA];
+  const b = byCode[typeB];
+  
+  // Check if they are duals
+  const pairKey = [typeA, typeB].sort().join("-");
+  const isDual = duals.has(pairKey);
+  
+  // Find shared traits
+  const sharedQuadra = a.quadra === b.quadra;
+  const sharedTemperament = a.temperament === b.temperament;
+  const sharedLeading = a.leading === b.leading;
+  const sharedCreative = a.creative === b.creative;
+  
+  // Function comparison
+  const functionComparison = [
+    { name: "Leading Function", a: a.leading, b: b.leading, same: a.leading === b.leading },
+    { name: "Creative Function", a: a.creative, b: b.creative, same: a.creative === b.creative },
+  ];
+  
+  return (
+    <section className="pt-10">
+      <h1 className="text-3xl font-semibold tracking-tight dark:text-gray-200">Type Comparison</h1>
+      <p className="mt-2 dark:text-gray-400 text-neutral-700">
+        Compare two socionics types side by side to see their similarities and differences.
+      </p>
+      
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Select types={types} label="Type A" value={typeA} setValue={setTypeA} />
+        <Select types={types} label="Type B" value={typeB} setValue={setTypeB} />
+      </div>
+      
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Type A Card */}
+        <div className="border border-neutral-300 p-6 dark:border-gray-700">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-2xl font-semibold dark:text-gray-200">
+              <span className="font-mono mr-2">{a.code}</span>
+              {a.fullName}
+            </h2>
+            <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600 dark:text-gray-400">{a.alias}</span>
+          </div>
+          
+          <div className="mt-4 space-y-3">
+            <div>
+              <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Quadra</span>
+              <div className="text-lg dark:text-gray-300">{a.quadra}</div>
+            </div>
+            <div>
+              <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Temperament</span>
+              <div className="text-lg dark:text-gray-300">{a.temperament}</div>
+            </div>
+            <div>
+              <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Functions</span>
+              <div className="mt-1 flex gap-4">
+                <div>
+                  <span className="text-sm dark:text-gray-400">Leading:</span>
+                  <div className="font-mono text-lg dark:text-gray-300">{a.leading}</div>
+                </div>
+                <div>
+                  <span className="text-sm dark:text-gray-400">Creative:</span>
+                  <div className="font-mono text-lg dark:text-gray-300">{a.creative}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Type B Card */}
+        <div className="border border-neutral-300 p-6 dark:border-gray-700">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-2xl font-semibold dark:text-gray-200">
+              <span className="font-mono mr-2">{b.code}</span>
+              {b.fullName}
+            </h2>
+            <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600 dark:text-gray-400">{b.alias}</span>
+          </div>
+          
+          <div className="mt-4 space-y-3">
+            <div>
+              <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Quadra</span>
+              <div className="text-lg dark:text-gray-300">{b.quadra}</div>
+            </div>
+            <div>
+              <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Temperament</span>
+              <div className="text-lg dark:text-gray-300">{b.temperament}</div>
+            </div>
+            <div>
+              <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Functions</span>
+              <div className="mt-1 flex gap-4">
+                <div>
+                  <span className="text-sm dark:text-gray-400">Leading:</span>
+                  <div className="font-mono text-lg dark:text-gray-300">{b.leading}</div>
+                </div>
+                <div>
+                  <span className="text-sm dark:text-gray-400">Creative:</span>
+                  <div className="font-mono text-lg dark:text-gray-300">{b.creative}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Comparison Results */}
+      <div className="mt-6 border border-neutral-300 p-6 dark:border-gray-700">
+        <h2 className="text-2xl font-semibold dark:text-gray-200">Comparison</h2>
+        
+        {isDual && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded dark:bg-red-900/30 dark:border-red-800">
+            <div className="font-semibold text-red-800 dark:text-red-200">Duality Pair</div>
+            <p className="mt-1 text-red-700 dark:text-red-300">
+              These types form a duality pair, which means they have complementary strengths and can provide what the other lacks.
+            </p>
+          </div>
+        )}
+        
+        <div className="mt-4">
+          <h3 className="font-semibold dark:text-gray-300">Shared Traits</h3>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {sharedQuadra && (
+              <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded dark:bg-red-900 dark:text-red-100">
+                Same Quadra ({a.quadra})
+              </span>
+            )}
+            {sharedTemperament && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded dark:bg-blue-900 dark:text-blue-100">
+                Same Temperament ({a.temperament})
+              </span>
+            )}
+            {sharedLeading && (
+              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded dark:bg-green-900 dark:text-green-100">
+                Same Leading Function ({a.leading})
+              </span>
+            )}
+            {sharedCreative && (
+              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded dark:bg-yellow-900 dark:text-yellow-100">
+                Same Creative Function ({a.creative})
+              </span>
+            )}
+          </div>
+        </div>
+        
+        <div className="mt-4">
+          <h3 className="font-semibold dark:text-gray-300">Function Comparison</h3>
+          <div className="mt-2 overflow-x-auto">
+            <table className="min-w-full divide-y divide-neutral-300 dark:divide-gray-700">
+              <thead>
+                <tr>
+                  <th className="py-2 text-left text-xs font-medium text-neutral-500 dark:text-gray-400">Function</th>
+                  <th className="py-2 text-left text-xs font-medium text-neutral-500 dark:text-gray-400">{a.code}</th>
+                  <th className="py-2 text-left text-xs font-medium text-neutral-500 dark:text-gray-400">{b.code}</th>
+                  <th className="py-2 text-left text-xs font-medium text-neutral-500 dark:text-gray-400">Match</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-300 dark:divide-gray-700">
+                {functionComparison.map((func, index) => (
+                  <tr key={index}>
+                    <td className="py-2 text-sm dark:text-gray-300">{func.name}</td>
+                    <td className="py-2 font-mono text-sm dark:text-gray-300">{func.a}</td>
+                    <td className="py-2 font-mono text-sm dark:text-gray-300">{func.b}</td>
+                    <td className="py-2 text-sm">
+                      {func.same ? (
+                        <span className="text-green-600 dark:text-green-400">✓ Match</span>
+                      ) : (
+                        <span className="text-red-600 dark:text-red-400">✗ Different</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
   );
