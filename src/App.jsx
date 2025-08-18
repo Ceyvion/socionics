@@ -178,7 +178,7 @@ export default function WikisocionMVP() {
   
   // Show loading state
   if (!types || !glossary || !relations) {
-    return <div className={cls("min-h-screen flex items-center justify-center", darkMode ? "bg-gray-900" : "bg-white")}><div className="p-6 dark:text-gray-300">Loading…</div></div>;
+    return <div className={cls("min-h-screen flex items-center justify-center", darkMode ? "bg-gray-900" : "bg-white")}><div className={cls("p-6", darkMode ? "text-white" : "text-black")}>Loading…</div></div>;
   }
   
   // build helpers the old constants provided
@@ -186,7 +186,7 @@ export default function WikisocionMVP() {
   const DUALS = new Set(relations.filter(r=>r.name==="Duality").map(r => [r.a, r.b].sort().join("-")));
   
   return (
-    <div className={cls("min-h-screen", darkMode ? "bg-gray-900 text-gray-100" : "bg-white text-neutral-900")}>
+    <div className={cls("min-h-screen", darkMode ? "bg-gray-900 text-white" : "bg-white text-black")}>
       <a
         href="#content"
         className="sr-only focus:not-sr-only focus:absolute focus:m-4 focus:p-2 focus:bg-white focus:ring-2 focus:ring-red-600"
@@ -208,18 +208,18 @@ export default function WikisocionMVP() {
       />
       <main id="content" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-24">
         {route.name === "home" && <Home onNav={navigate} types={types} />}
-        {route.name === "start" && <StartHere onNav={navigate} />}
+        {route.name === "start" && <StartHere onNav={navigate} darkMode={darkMode} />}
         {route.name === "types" && <TypesIndex types={types} onOpen={(code) => navigate("type", { code })} />}
-        {route.name === "type" && <TypeDetail types={types} duals={DUALS} code={route.code} onBack={() => navigate("types")} />}
-        {route.name === "relations" && <Relations types={types} duals={DUALS} relations={relations} onNav={navigate} />}
-        {route.name === "theory" && <Theory onNav={navigate} />}
-        {route.name === "functions" && <FunctionExplorer glossary={glossary} types={types} />}
-        {route.name === "compare" && <TypeCompare types={types} duals={DUALS} />}
-        {route.name === "glossary" && <Glossary glossary={glossary} focus={route.focus} />}
-        {route.name === "library" && <Library />}
-        {route.name === "about" && <About />}
+        {route.name === "type" && <TypeDetail types={types} duals={DUALS} code={route.code} onBack={() => navigate("types")} darkMode={darkMode} />}
+        {route.name === "relations" && <Relations types={types} duals={DUALS} relations={relations} onNav={navigate} darkMode={darkMode} />}
+        {route.name === "theory" && <Theory onNav={navigate} darkMode={darkMode} />}
+        {route.name === "functions" && <FunctionExplorer glossary={glossary} types={types} darkMode={darkMode} />}
+        {route.name === "compare" && <TypeCompare types={types} duals={DUALS} darkMode={darkMode} />}
+        {route.name === "glossary" && <Glossary glossary={glossary} focus={route.focus} darkMode={darkMode} />}
+        {route.name === "library" && <Library darkMode={darkMode} />}
+        {route.name === "about" && <About darkMode={darkMode} />}
       </main>
-      <SiteFooter />
+      <SiteFooter darkMode={darkMode} />
     </div>
   );
 }
@@ -254,7 +254,7 @@ function TopBar({ onNav, query, setQuery, searchRef, onResult, results, darkMode
             <button
               key={route}
               onClick={() => onNav(route)}
-              className={cls("hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-600 rounded-sm", darkMode ? "text-gray-300 hover:text-red-500" : "text-neutral-900")}
+              className={cls("hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-600 rounded-sm", darkMode ? "text-white hover:text-red-500" : "text-black")}
             >
               {label}
             </button>
@@ -277,7 +277,7 @@ function TopBar({ onNav, query, setQuery, searchRef, onResult, results, darkMode
                 <button
                   key={i}
                   onClick={() => onResult(r)}
-                  className={cls("w-full text-left px-3 py-2 text-sm focus:outline-none", darkMode ? "hover:bg-gray-700 focus:bg-gray-700 text-gray-200" : "hover:bg-neutral-50 focus:bg-neutral-50 text-neutral-900")}
+                  className={cls("w-full text-left px-3 py-2 text-sm focus:outline-none", darkMode ? "hover:bg-gray-700 focus:bg-gray-700 text-white" : "hover:bg-neutral-50 focus:bg-neutral-50 text-black")}
                 >
                   {r.kind === "type" ? (
                     <span className="font-mono mr-2">{r.id}</span>
@@ -311,7 +311,7 @@ function Home({ onNav, types }) {
           <h1 className="text-5xl md:text-6xl font-semibold tracking-tight leading-[1.05]">
             Socionics, organized.
           </h1>
-          <p className="mt-4 text-lg max-w-xl dark:text-gray-300 text-neutral-700">
+          <p className={cls("mt-4 text-lg max-w-xl", darkMode ? "text-gray-300" : "text-neutral-700")}>
             Clear explanations of types, functions, and relations. Minimal jargon. Mobile-friendly. Open source.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -384,13 +384,13 @@ function HomeTile({ title, subtitle, icon, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="h-28 border border-neutral-300 text-left px-4 py-3 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-red-600 dark:border-gray-600 dark:hover:bg-gray-800 dark:text-gray-300"
+      className="h-28 border border-neutral-300 text-left px-4 py-3 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-red-600 dark:border-gray-600 dark:hover:bg-gray-800"
     >
       <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-gray-400">
         {icon}
         <span>{subtitle}</span>
       </div>
-      <div className="mt-2 text-xl font-semibold">{title}</div>
+      <div className="mt-2 text-xl font-semibold dark:text-white text-black">{title}</div>
     </button>
   );
 }
@@ -466,13 +466,13 @@ function TypesIndex({ types, onOpen }) {
             <button
               key={t.code}
               onClick={() => onOpen(t.code)}
-              className="border border-neutral-300 text-left px-4 py-3 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-red-600 dark:border-gray-600 dark:hover:bg-gray-800 dark:text-gray-300"
+              className="border border-neutral-300 text-left px-4 py-3 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-red-600 dark:border-gray-600 dark:hover:bg-gray-800"
             >
               <div className="flex items-baseline justify-between">
-                <div className="font-mono text-2xl">{t.code}</div>
-                <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600">{t.alias}</span>
+                <div className="font-mono text-2xl dark:text-white text-black">{t.code}</div>
+                <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600 dark:text-gray-300 text-neutral-700">{t.alias}</span>
               </div>
-              <div className="mt-1 text-sm dark:text-gray-400 text-neutral-700">{t.fullName}</div>
+              <div className="mt-1 text-sm dark:text-gray-300 text-neutral-700">{t.fullName}</div>
               <div className="mt-2 flex gap-2 text-xs dark:text-gray-500 text-neutral-600">
                 <span className="px-1 border border-neutral-300 dark:border-gray-600">{t.quadra}</span>
                 <span className="px-1 border border-neutral-300 dark:border-gray-600">{t.temperament}</span>
@@ -490,8 +490,8 @@ function TypesIndex({ types, onOpen }) {
               className="w-full text-left py-3 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-red-600 dark:hover:bg-gray-800"
             >
               <div className="flex items-center gap-4 px-2">
-                <span className="font-mono text-lg w-16 dark:text-gray-300">{t.code}</span>
-                <span className="flex-1 dark:text-gray-300">
+                <span className="font-mono text-lg w-16 dark:text-white text-black">{t.code}</span>
+                <span className="flex-1 dark:text-gray-300 text-black">
                   {t.fullName} <span className="text-neutral-500 dark:text-gray-500">({t.alias})</span>
                 </span>
                 <span className="text-xs text-neutral-600 dark:text-gray-500">
@@ -512,13 +512,13 @@ function TypeCard({ type }) {
       href={type.href}
       target="_blank"
       rel="noopener noreferrer"
-      className="border border-neutral-300 px-4 py-3 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-red-600 dark:border-gray-600 dark:hover:bg-gray-800 dark:text-gray-300"
+      className="border border-neutral-300 px-4 py-3 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-red-600 dark:border-gray-600 dark:hover:bg-gray-800"
     >
       <div className="flex items-baseline justify-between">
-        <div className="font-mono text-2xl">{type.code}</div>
-        <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600">{type.alias}</span>
+        <div className="font-mono text-2xl dark:text-white text-black">{type.code}</div>
+        <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600 dark:text-gray-300 text-neutral-700">{type.alias}</span>
       </div>
-      <div className="mt-1 text-sm dark:text-gray-400 text-neutral-700">{type.fullName}</div>
+      <div className="mt-1 text-sm dark:text-gray-300 text-neutral-700">{type.fullName}</div>
       <div className="mt-2 flex gap-2 text-xs dark:text-gray-500 text-neutral-600">
         <span className="px-1 border border-neutral-300 dark:border-gray-600">{type.quadra}</span>
         <span className="px-1 border border-neutral-300 dark:border-gray-600">{type.leading}/{type.creative}</span>
@@ -530,7 +530,7 @@ function TypeCard({ type }) {
   );
 }
 
-function TypeDetail({ types, duals, code, onBack }) {
+function TypeDetail({ types, duals, code, onBack, darkMode }) {
   const byCode = Object.fromEntries(types.map((t) => [t.code, t]));
   const t = byCode[code] ?? types[0];
   
@@ -922,7 +922,7 @@ function TypeDetail({ types, duals, code, onBack }) {
     <section className="pt-10">
       <button
         onClick={onBack}
-        className="text-sm text-neutral-600 hover:text-neutral-900 inline-flex items-center gap-1 dark:text-gray-400 dark:hover:text-gray-300"
+        className={cls("text-sm inline-flex items-center gap-1", darkMode ? "text-gray-400 hover:text-gray-300" : "text-neutral-600 hover:text-neutral-900")}
       >
         <HomeIcon className="h-4 w-4" /> Back to Types
       </button>
@@ -930,13 +930,13 @@ function TypeDetail({ types, duals, code, onBack }) {
         <div className="lg:col-span-8">
           <div className="border border-neutral-300 p-6 dark:border-gray-700">
             <div className="flex items-baseline justify-between">
-              <h1 className="text-4xl font-semibold tracking-tight dark:text-gray-200">
+              <h1 className={cls("text-4xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>
                 <span className="font-mono mr-2">{t.code}</span>
                 {t.fullName}
               </h1>
-              <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600 dark:text-gray-400">{t.alias}</span>
+              <span className={cls("text-xs px-1.5 py-0.5 border", darkMode ? "border-gray-600 text-gray-300" : "border-neutral-300 text-neutral-700")}>{t.alias}</span>
             </div>
-            <p className="mt-4 dark:text-gray-300 text-neutral-700 max-w-prose">
+            <p className={cls("mt-4 max-w-prose", darkMode ? "text-gray-300" : "text-neutral-700")}>
               {content.summary}
             </p>
             
@@ -944,14 +944,14 @@ function TypeDetail({ types, duals, code, onBack }) {
               <h2 className="text-2xl font-semibold dark:text-gray-200">Core Characteristics</h2>
               <div className="mt-4 grid sm:grid-cols-2 gap-4">
                 <div className="border border-neutral-300 p-4 dark:border-gray-700">
-                  <h3 className="font-semibold dark:text-gray-300 text-neutral-800">Typical Strengths</h3>
-                  <p className="mt-2 text-sm dark:text-gray-400 text-neutral-700">
+                  <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Typical Strengths</h3>
+                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-700")}>
                     {content.characteristics.strengths}
                   </p>
                 </div>
                 <div className="border border-neutral-300 p-4 dark:border-gray-700">
-                  <h3 className="font-semibold dark:text-gray-300 text-neutral-800">Common Challenges</h3>
-                  <p className="mt-2 text-sm dark:text-gray-400 text-neutral-700">
+                  <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Common Challenges</h3>
+                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-700")}>
                     {content.characteristics.challenges}
                   </p>
                 </div>
@@ -962,20 +962,20 @@ function TypeDetail({ types, duals, code, onBack }) {
               <h2 className="text-2xl font-semibold dark:text-gray-200">Interaction & Context</h2>
               <div className="mt-4 grid sm:grid-cols-3 gap-4">
                 <div className="border border-neutral-300 p-4 dark:border-gray-700">
-                  <h3 className="font-semibold dark:text-gray-300 text-neutral-800">Communication</h3>
-                  <p className="mt-2 text-sm dark:text-gray-400 text-neutral-700">
+                  <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Communication</h3>
+                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-700")}>
                     {content.interaction.communication}
                   </p>
                 </div>
                 <div className="border border-neutral-300 p-4 dark:border-gray-700">
-                  <h3 className="font-semibold dark:text-gray-300 text-neutral-800">Work/Learning</h3>
-                  <p className="mt-2 text-sm dark:text-gray-400 text-neutral-700">
+                  <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Work/Learning</h3>
+                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-700")}>
                     {content.interaction.work}
                   </p>
                 </div>
                 <div className="border border-neutral-300 p-4 dark:border-gray-700">
-                  <h3 className="font-semibold dark:text-gray-300 text-neutral-800">Decision-making</h3>
-                  <p className="mt-2 text-sm dark:text-gray-400 text-neutral-700">
+                  <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Decision-making</h3>
+                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-700")}>
                     {content.interaction.decision}
                   </p>
                 </div>
@@ -983,13 +983,13 @@ function TypeDetail({ types, duals, code, onBack }) {
             </div>
             
             <div className="mt-8">
-              <h2 className="text-2xl font-semibold dark:text-gray-200">Model A (schematic)</h2>
-              <ModelA leading={t.leading} creative={t.creative} modelA={content.modelA} darkMode={true} />
+              <h2 className={cls("text-2xl font-semibold", darkMode ? "text-white" : "text-black")}>Model A (schematic)</h2>
+              <ModelA leading={t.leading} creative={t.creative} modelA={content.modelA} darkMode={darkMode} />
             </div>
             
             <div className="mt-8">
-              <h2 className="text-2xl font-semibold dark:text-gray-200">On-site Nuances</h2>
-              <p className="mt-4 dark:text-gray-300 text-neutral-700 max-w-prose">
+              <h2 className={cls("text-2xl font-semibold", darkMode ? "text-white" : "text-black")}>On-site Nuances</h2>
+              <p className={cls("mt-4 max-w-prose", darkMode ? "text-gray-300" : "text-neutral-700")}>
                 {content.nuances}
               </p>
             </div>
@@ -997,19 +997,19 @@ function TypeDetail({ types, duals, code, onBack }) {
         </div>
         <aside className="lg:col-span-4">
           <div className="border border-neutral-300 p-4 dark:border-gray-700">
-            <h3 className="font-semibold dark:text-gray-300">Type Info</h3>
+            <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Type Info</h3>
             <div className="mt-3 space-y-3">
               <div>
-                <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Quadra</span>
-                <div className="text-lg dark:text-gray-300">{t.quadra}</div>
+                <span className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Quadra</span>
+                <div className={cls("text-lg", darkMode ? "text-white" : "text-black")}>{t.quadra}</div>
               </div>
               <div>
-                <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Temperament</span>
-                <div className="text-lg dark:text-gray-300">{t.temperament}</div>
+                <span className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Temperament</span>
+                <div className={cls("text-lg", darkMode ? "text-white" : "text-black")}>{t.temperament}</div>
               </div>
               <div>
-                <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Leading / Creative</span>
-                <div className="text-lg dark:text-gray-300">
+                <span className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Leading / Creative</span>
+                <div className={cls("text-lg", darkMode ? "text-white" : "text-black")}>
                   {t.leading} / {t.creative}
                 </div>
               </div>
@@ -1018,22 +1018,22 @@ function TypeDetail({ types, duals, code, onBack }) {
               href={t.href}
               target="_blank"
               rel="noopener"
-              className="mt-4 block w-full bg-neutral-100 hover:bg-neutral-200 text-center py-2 text-sm dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300"
+              className={cls("mt-4 block w-full text-center py-2 text-sm", darkMode ? "bg-gray-800 hover:bg-gray-700 text-gray-300" : "bg-neutral-100 hover:bg-neutral-200 text-black")}
             >
               Canonical page
             </a>
           </div>
           
           <div className="mt-4 border border-neutral-300 p-4 dark:border-gray-700">
-            <h3 className="font-semibold dark:text-gray-300">Intertype Relations</h3>
-            <p className="text-sm dark:text-gray-400 text-neutral-700 mt-1">
+            <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Intertype Relations</h3>
+            <p className={cls("text-sm mt-1", darkMode ? "text-gray-400" : "text-neutral-700")}>
               Key relations for {t.code}
             </p>
-            <DualityList types={types} duals={duals} self={t.code} />
+            <DualityList types={types} duals={duals} self={t.code} darkMode={darkMode} />
             
             {/* Additional relations */}
             <div className="mt-4">
-              <h4 className="font-medium dark:text-gray-300 text-neutral-800">Same Quadra</h4>
+              <h4 className={cls("font-medium", darkMode ? "text-white" : "text-black")}>Same Quadra</h4>
               <div className="mt-2 flex flex-wrap gap-2">
                 {sameQuadra.map(type => (
                   <button
@@ -1042,7 +1042,7 @@ function TypeDetail({ types, duals, code, onBack }) {
                       onBack();
                       setTimeout(() => window.location.hash = `#/type/${type.code}`, 100);
                     }}
-                    className="text-xs px-2 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded"
+                    className={cls("text-xs px-2 py-1 rounded", darkMode ? "bg-gray-800 hover:bg-gray-700 text-white" : "bg-neutral-100 hover:bg-neutral-200 text-black")}
                   >
                     {type.code}
                   </button>
@@ -1051,7 +1051,7 @@ function TypeDetail({ types, duals, code, onBack }) {
             </div>
             
             <div className="mt-4">
-              <h4 className="font-medium dark:text-gray-300 text-neutral-800">Same Temperament</h4>
+              <h4 className={cls("font-medium", darkMode ? "text-white" : "text-black")}>Same Temperament</h4>
               <div className="mt-2 flex flex-wrap gap-2">
                 {sameTemperament.map(type => (
                   <button
@@ -1060,7 +1060,7 @@ function TypeDetail({ types, duals, code, onBack }) {
                       onBack();
                       setTimeout(() => window.location.hash = `#/type/${type.code}`, 100);
                     }}
-                    className="text-xs px-2 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded"
+                    className={cls("text-xs px-2 py-1 rounded", darkMode ? "bg-gray-800 hover:bg-gray-700 text-white" : "bg-neutral-100 hover:bg-neutral-200 text-black")}
                   >
                     {type.code}
                   </button>
@@ -1069,7 +1069,7 @@ function TypeDetail({ types, duals, code, onBack }) {
             </div>
             
             <div className="mt-4">
-              <h4 className="font-medium dark:text-gray-300 text-neutral-800">Same Leading Function</h4>
+              <h4 className={cls("font-medium", darkMode ? "text-white" : "text-black")}>Same Leading Function</h4>
               <div className="mt-2 flex flex-wrap gap-2">
                 {sameLeading.map(type => (
                   <button
@@ -1078,7 +1078,7 @@ function TypeDetail({ types, duals, code, onBack }) {
                       onBack();
                       setTimeout(() => window.location.hash = `#/type/${type.code}`, 100);
                     }}
-                    className="text-xs px-2 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded"
+                    className={cls("text-xs px-2 py-1 rounded", darkMode ? "bg-gray-800 hover:bg-gray-700 text-white" : "bg-neutral-100 hover:bg-neutral-200 text-black")}
                   >
                     {type.code}
                   </button>
@@ -1109,12 +1109,12 @@ function ModelA({ leading, creative, modelA, darkMode }) {
       {boxes.map((b, i) => (
         <div key={i} className="border border-neutral-300 p-3 dark:border-gray-700">
           <div className="flex justify-between">
-            <div className="text-xs text-neutral-500 dark:text-gray-500">{b.position}</div>
+            <div className={cls("text-xs", darkMode ? "text-gray-500" : "text-neutral-500")}>{b.position}</div>
             <div className={cls("font-mono", (i === 0 || i === 1) && "text-red-700 font-semibold", darkMode && (i === 0 || i === 1) && "text-red-500")}>
               {b.element}
             </div>
           </div>
-          <div className="mt-1 text-sm dark:text-gray-400 text-neutral-700">
+          <div className={cls("mt-1 text-sm", darkMode ? "text-gray-300" : "text-neutral-700")}>
             {b.description}
           </div>
         </div>
@@ -1123,7 +1123,7 @@ function ModelA({ leading, creative, modelA, darkMode }) {
   );
 }
 
-function DualityList({ types, duals, self }) {
+function DualityList({ types, duals, self, darkMode }) {
   const byCode = Object.fromEntries(types.map((t) => [t.code, t]));
   const pairs = [
     ["ILE", "SEI"],
@@ -1143,13 +1143,13 @@ function DualityList({ types, duals, self }) {
     <div className="mt-2 text-sm">
       <div className="flex items-center justify-between border border-neutral-300 p-3 dark:border-gray-700">
         <div>
-          <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Dual type</div>
-          <div className="text-lg font-mono dark:text-gray-300">{t.code}</div>
-          <div className="text-neutral-700 dark:text-gray-400">
+          <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Dual type</div>
+          <div className={cls("text-lg font-mono", darkMode ? "text-white" : "text-black")}>{t.code}</div>
+          <div className={cls("", darkMode ? "text-gray-300" : "text-neutral-700")}>
             {t.fullName} ({t.alias})
           </div>
         </div>
-        <a href={t.href} target="_blank" rel="noopener" className="text-red-600 text-sm dark:text-red-500">
+        <a href={t.href} target="_blank" rel="noopener" className={cls("text-sm", darkMode ? "text-red-500 hover:text-red-400" : "text-red-600 hover:text-red-800")}>
           Open <ExternalLink className="inline h-4 w-4" />
         </a>
       </div>
@@ -1157,7 +1157,7 @@ function DualityList({ types, duals, self }) {
   );
 }
 
-function Relations({ types, duals, relations, onNav }) {
+function Relations({ types, duals, relations, onNav, darkMode }) {
   const [a, setA] = useState("ILE");
   const [b, setB] = useState("SEI");
 
@@ -1216,19 +1216,19 @@ function Relations({ types, duals, relations, onNav }) {
 
   return (
     <section className="pt-10">
-      <h1 className="text-3xl font-semibold tracking-tight dark:text-gray-200">Relations</h1>
-      <p className="mt-2 dark:text-gray-400 text-neutral-700">
+      <h1 className={cls("text-3xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>Relations</h1>
+      <p className={cls("mt-2", darkMode ? "text-gray-400" : "text-neutral-700")}>
         Explore the relationships between socionics types. Select two types to see their connection.
       </p>
 
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Select types={types} label="Type A" value={a} setValue={setA} />
-        <Select types={types} label="Type B" value={b} setValue={setB} />
+        <Select types={types} label="Type A" value={a} setValue={setA} darkMode={darkMode} />
+        <Select types={types} label="Type B" value={b} setValue={setB} darkMode={darkMode} />
       </div>
 
       <div className="mt-6 border border-neutral-300 p-6 dark:border-gray-700">
-        <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Primary Relation</div>
-        <div className="mt-1 text-2xl font-semibold dark:text-gray-300">
+        <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Primary Relation</div>
+        <div className={cls("mt-1 text-2xl font-semibold", darkMode ? "text-white" : "text-black")}>
           {isIdentity ? "Identity" : 
            isDualSame ? "Duality" : 
            isActivator ? "Activation" : 
@@ -1242,8 +1242,8 @@ function Relations({ types, duals, relations, onNav }) {
         </div>
         
         <div className="mt-4">
-          <h3 className="font-semibold dark:text-gray-300">Relation Characteristics</h3>
-          <ul className="mt-2 space-y-2 text-sm dark:text-gray-400 text-neutral-700">
+          <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Relation Characteristics</h3>
+          <ul className={cls("mt-2 space-y-2 text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>
             {isIdentity && (
               <li>• Same type - complete understanding but potential for stagnation</li>
             )}
@@ -1275,25 +1275,25 @@ function Relations({ types, duals, relations, onNav }) {
         </div>
         
         <div className="mt-4">
-          <h3 className="font-semibold dark:text-gray-300">Shared Traits</h3>
+          <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Shared Traits</h3>
           <div className="mt-2 flex flex-wrap gap-2">
             {isSameQuadra && (
-              <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded dark:bg-red-900 dark:text-red-100">
+              <span className={cls("px-2 py-1 text-xs rounded", darkMode ? "bg-red-900 text-red-100" : "bg-red-100 text-red-800")}>
                 Same Quadra ({typeA.quadra})
               </span>
             )}
             {isSameTemperament && (
-              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded dark:bg-blue-900 dark:text-blue-100">
+              <span className={cls("px-2 py-1 text-xs rounded", darkMode ? "bg-blue-900 text-blue-100" : "bg-blue-100 text-blue-800")}>
                 Same Temperament ({typeA.temperament})
               </span>
             )}
             {isSameLeading && (
-              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded dark:bg-green-900 dark:text-green-100">
+              <span className={cls("px-2 py-1 text-xs rounded", darkMode ? "bg-green-900 text-green-100" : "bg-green-100 text-green-800")}>
                 Same Leading Function ({typeA.leading})
               </span>
             )}
             {isSameCreative && (
-              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded dark:bg-yellow-900 dark:text-yellow-100">
+              <span className={cls("px-2 py-1 text-xs rounded", darkMode ? "bg-yellow-900 text-yellow-100" : "bg-yellow-100 text-yellow-800")}>
                 Same Creative Function ({typeA.creative})
               </span>
             )}
@@ -1303,31 +1303,31 @@ function Relations({ types, duals, relations, onNav }) {
       
       {/* Visual relationship diagram */}
       <div className="mt-6 border border-neutral-300 p-6 dark:border-gray-700">
-        <h2 className="text-xl font-semibold dark:text-gray-300">Function Comparison</h2>
+        <h2 className={cls("text-xl font-semibold", darkMode ? "text-white" : "text-black")}>Function Comparison</h2>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="border border-neutral-300 p-4 dark:border-gray-700">
-            <h3 className="font-mono text-lg dark:text-gray-300">{a} Functions</h3>
+            <h3 className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{a} Functions</h3>
             <div className="mt-2 space-y-1 text-sm">
               <div className="flex justify-between">
-                <span>Leading:</span>
-                <span className="font-mono">{typeA.leading}</span>
+                <span className={cls("", darkMode ? "text-gray-300" : "text-neutral-700")}>Leading:</span>
+                <span className={cls("font-mono", darkMode ? "text-white" : "text-black")}>{typeA.leading}</span>
               </div>
               <div className="flex justify-between">
-                <span>Creative:</span>
-                <span className="font-mono">{typeA.creative}</span>
+                <span className={cls("", darkMode ? "text-gray-300" : "text-neutral-700")}>Creative:</span>
+                <span className={cls("font-mono", darkMode ? "text-white" : "text-black")}>{typeA.creative}</span>
               </div>
             </div>
           </div>
           <div className="border border-neutral-300 p-4 dark:border-gray-700">
-            <h3 className="font-mono text-lg dark:text-gray-300">{b} Functions</h3>
+            <h3 className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{b} Functions</h3>
             <div className="mt-2 space-y-1 text-sm">
               <div className="flex justify-between">
-                <span>Leading:</span>
-                <span className="font-mono">{typeB.leading}</span>
+                <span className={cls("", darkMode ? "text-gray-300" : "text-neutral-700")}>Leading:</span>
+                <span className={cls("font-mono", darkMode ? "text-white" : "text-black")}>{typeB.leading}</span>
               </div>
               <div className="flex justify-between">
-                <span>Creative:</span>
-                <span className="font-mono">{typeB.creative}</span>
+                <span className={cls("", darkMode ? "text-gray-300" : "text-neutral-700")}>Creative:</span>
+                <span className={cls("font-mono", darkMode ? "text-white" : "text-black")}>{typeB.creative}</span>
               </div>
             </div>
           </div>
@@ -1337,17 +1337,16 @@ function Relations({ types, duals, relations, onNav }) {
   );
 }
 
-function Select({ types, label, value, setValue }) {
   return (
     <label className="text-sm">
-      <div className="text-neutral-600 mb-1 dark:text-gray-400">{label}</div>
+      <div className={cls("mb-1", darkMode ? "text-gray-400" : "text-neutral-600")}>{label}</div>
       <select
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="w-full border border-neutral-300 px-2 py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+        className={cls("w-full border px-2 py-2", darkMode ? "border-gray-700 bg-gray-800 text-white" : "border-neutral-300 text-black")}
       >
         {types.map((t) => (
-          <option key={t.code} value={t.code} className="dark:bg-gray-800">
+          <option key={t.code} className={darkMode ? "bg-gray-800" : ""}>
             {t.code} — {t.fullName} ({t.alias})
           </option>
         ))}
@@ -1356,23 +1355,23 @@ function Select({ types, label, value, setValue }) {
   );
 }
 
-function Theory({ onNav }) {
+function Theory({ onNav, darkMode }) {
   return (
     <section className="pt-10">
-      <h1 className="text-3xl font-semibold tracking-tight dark:text-gray-200">Theory</h1>
+      <h1 className={cls("text-3xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>Theory</h1>
       <div className="mt-6 grid md:grid-cols-3 gap-3">
-        <TheoryCard title="Model A" summary="Eight function positions; leading and creative guide the stack." />
-        <TheoryCard title="Information Elements" summary="Ne, Ni, Se, Si, Te, Ti, Fe, Fi as channels of information." onCTAClick={() => onNav("functions")} ctaLabel="Explore Functions" />
-        <TheoryCard title="Quadras" summary="Four cultures of values: Alpha, Beta, Gamma, Delta." />
+        <TheoryCard title="Model A" summary="Eight function positions; leading and creative guide the stack." darkMode={darkMode} />
+        <TheoryCard title="Information Elements" summary="Ne, Ni, Se, Si, Te, Ti, Fe, Fi as channels of information." onCTAClick={() => onNav("functions")} ctaLabel="Explore Functions" darkMode={darkMode} />
+        <TheoryCard title="Quadras" summary="Four cultures of values: Alpha, Beta, Gamma, Delta." darkMode={darkMode} />
       </div>
-      <p className="mt-6 text-sm dark:text-gray-400 text-neutral-700">
+      <p className={cls("mt-6 text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>
         These articles are concise primers with diagrams. For depth, use the Library to reach canonical materials.
       </p>
     </section>
   );
 }
 
-function FunctionExplorer({ glossary, types }) {
+function FunctionExplorer({ glossary, types, darkMode }) {
   const [selectedFunction, setSelectedFunction] = useState("Ne");
   
   // Group types by their leading function
@@ -1397,8 +1396,8 @@ function FunctionExplorer({ glossary, types }) {
   
   return (
     <section className="pt-10">
-      <h1 className="text-3xl font-semibold tracking-tight dark:text-gray-200">Function Explorer</h1>
-      <p className="mt-2 dark:text-gray-400 text-neutral-700">
+      <h1 className={cls("text-3xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>Function Explorer</h1>
+      <p className={cls("mt-2", darkMode ? "text-gray-400" : "text-neutral-700")}>
         Explore the eight information elements and see which types value them most.
       </p>
       
@@ -1412,7 +1411,9 @@ function FunctionExplorer({ glossary, types }) {
                 "px-3 py-1 text-sm rounded",
                 selectedFunction === func.term 
                   ? "bg-red-600 text-white" 
-                  : "bg-neutral-100 text-neutral-800 hover:bg-neutral-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  : darkMode 
+                    ? "bg-gray-800 text-white hover:bg-gray-700" 
+                    : "bg-neutral-100 text-black hover:bg-neutral-200"
               )}
             >
               {func.term}
@@ -1422,41 +1423,41 @@ function FunctionExplorer({ glossary, types }) {
       </div>
       
       <div className="mt-6 border border-neutral-300 p-6 dark:border-gray-700">
-        <h2 className="text-2xl font-semibold dark:text-gray-300">
+        <h2 className={cls("text-2xl font-semibold", darkMode ? "text-white" : "text-black")}>
           {selectedFunction}: {functionDetails?.shortDef.split(" - ")[1] || ""}
         </h2>
-        <p className="mt-2 dark:text-gray-400 text-neutral-700">
+        <p className={cls("mt-2", darkMode ? "text-gray-400" : "text-neutral-700")}>
           {functionDetails?.shortDef}
         </p>
         
         <div className="mt-6 grid md:grid-cols-2 gap-6">
           <div>
-            <h3 className="text-lg font-semibold dark:text-gray-300">Types with {selectedFunction} as Leading Function</h3>
+            <h3 className={cls("text-lg font-semibold", darkMode ? "text-white" : "text-black")}>Types with {selectedFunction} as Leading Function</h3>
             <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
               {(typesByLeadingFunction[selectedFunction] || []).map(type => (
                 <a
                   key={type.code}
                   href={`#/type/${type.code}`}
-                  className="border border-neutral-300 p-3 text-center hover:bg-neutral-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                  className={cls("border p-3 text-center", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}
                 >
-                  <div className="font-mono text-lg">{type.code}</div>
-                  <div className="text-xs mt-1 dark:text-gray-400">{type.alias}</div>
+                  <div className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{type.code}</div>
+                  <div className={cls("text-xs mt-1", darkMode ? "text-gray-400" : "text-neutral-700")}>{type.alias}</div>
                 </a>
               ))}
             </div>
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold dark:text-gray-300">Types with {selectedFunction} as Creative Function</h3>
+            <h3 className={cls("text-lg font-semibold", darkMode ? "text-white" : "text-black")}>Types with {selectedFunction} as Creative Function</h3>
             <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
               {(typesByCreativeFunction[selectedFunction] || []).map(type => (
                 <a
                   key={type.code}
                   href={`#/type/${type.code}`}
-                  className="border border-neutral-300 p-3 text-center hover:bg-neutral-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                  className={cls("border p-3 text-center", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}
                 >
-                  <div className="font-mono text-lg">{type.code}</div>
-                  <div className="text-xs mt-1 dark:text-gray-400">{type.alias}</div>
+                  <div className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{type.code}</div>
+                  <div className={cls("text-xs mt-1", darkMode ? "text-gray-400" : "text-neutral-700")}>{type.alias}</div>
                 </a>
               ))}
             </div>
@@ -1467,16 +1468,16 @@ function FunctionExplorer({ glossary, types }) {
   );
 }
 
-function TheoryCard({ title, summary, onCTAClick, ctaLabel }) {
+function TheoryCard({ title, summary, onCTAClick, ctaLabel, darkMode }) {
   return (
-    <div className="border border-neutral-300 p-4 hover:bg-neutral-50 dark:border-gray-700 dark:hover:bg-gray-800 flex flex-col h-full">
-      <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Primer</div>
-      <div className="text-xl font-semibold dark:text-gray-300">{title}</div>
-      <p className="mt-1 text-neutral-700 text-sm dark:text-gray-400 flex-grow">{summary}</p>
+    <div className={cls("border p-4 flex flex-col h-full", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}>
+      <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Primer</div>
+      <div className={cls("text-xl font-semibold", darkMode ? "text-white" : "text-black")}>{title}</div>
+      <p className={cls("mt-1 flex-grow text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>{summary}</p>
       {onCTAClick && (
         <button 
           onClick={onCTAClick}
-          className="mt-3 text-sm text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400"
+          className={cls("mt-3 text-sm", darkMode ? "text-red-500 hover:text-red-400" : "text-red-600 hover:text-red-800")}
         >
           {ctaLabel || "Learn more"}
         </button>
@@ -1485,7 +1486,7 @@ function TheoryCard({ title, summary, onCTAClick, ctaLabel }) {
   );
 }
 
-function Glossary({ glossary, focus }) {
+function Glossary({ glossary, focus, darkMode }) {
   const containerRef = useRef(null);
   useEffect(() => {
     if (!focus) return;
@@ -1496,16 +1497,16 @@ function Glossary({ glossary, focus }) {
   }, [focus]);
   return (
     <section ref={containerRef} className="pt-10 max-w-3xl">
-      <h1 className="text-3xl font-semibold tracking-tight dark:text-gray-200">Glossary</h1>
-      <p className="mt-2 dark:text-gray-400 text-neutral-700">
+      <h1 className={cls("text-3xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>Glossary</h1>
+      <p className={cls("mt-2", darkMode ? "text-gray-400" : "text-neutral-700")}>
         Short, first-pass definitions. Click a term to expand in place in a future version.
       </p>
       <div className="mt-6 grid sm:grid-cols-2 gap-3">
         {glossary.map((g) => (
           <div key={g.term} id={`gloss-${g.term}`} className="border border-neutral-300 p-3 dark:border-gray-700">
-            <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Term</div>
-            <div className="text-lg font-mono dark:text-gray-300">{g.term}</div>
-            <div className="mt-1 text-sm dark:text-gray-400 text-neutral-700">{g.shortDef}</div>
+            <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Term</div>
+            <div className={cls("text-lg font-mono", darkMode ? "text-white" : "text-black")}>{g.term}</div>
+            <div className={cls("mt-1 text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>{g.shortDef}</div>
           </div>
         ))}
       </div>
@@ -1513,51 +1514,51 @@ function Glossary({ glossary, focus }) {
   );
 }
 
-function Library() {
+function Library({ darkMode }) {
   return (
     <section className="pt-10">
-      <h1 className="text-3xl font-semibold tracking-tight dark:text-gray-200">Library</h1>
-      <p className="mt-2 dark:text-gray-400 text-neutral-700">Curated entry points. Each item explains why it matters.</p>
+      <h1 className={cls("text-3xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>Library</h1>
+      <p className={cls("mt-2", darkMode ? "text-gray-400" : "text-neutral-700")}>Curated entry points. Each item explains why it matters.</p>
       <div className="mt-6 grid md:grid-cols-3 gap-3">
         <a
-          className="border border-neutral-300 p-4 hover:bg-neutral-50 dark:border-gray-700 dark:hover:bg-gray-800"
+          className={cls("border p-4", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}
           href="https://wikisocion.github.io/"
           target="_blank"
           rel="noopener"
         >
-          <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">External</div>
-          <div className="text-lg font-semibold inline-flex items-center gap-2 dark:text-gray-300">
+          <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>External</div>
+          <div className={cls("text-lg font-semibold inline-flex items-center gap-2", darkMode ? "text-white" : "text-black")}>
             Wikisocion archive <ExternalLink className="h-4 w-4" />
           </div>
-          <p className="mt-1 text-sm dark:text-gray-400 text-neutral-700">
+          <p className={cls("mt-1 text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>
             The canonical collection - deep dives, history, alternative models.
           </p>
         </a>
         <a
-          className="border border-neutral-300 p-4 hover:bg-neutral-50 dark:border-gray-700 dark:hover:bg-gray-800"
+          className={cls("border p-4", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}
           href="https://wikisocion.github.io/content/Model_A.html"
           target="_blank"
           rel="noopener"
         >
-          <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Primer</div>
-          <div className="text-lg font-semibold inline-flex items-center gap-2 dark:text-gray-300">
+          <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Primer</div>
+          <div className={cls("text-lg font-semibold inline-flex items-center gap-2", darkMode ? "text-white" : "text-black")}>
             Model A <ExternalLink className="h-4 w-4" />
           </div>
-          <p className="mt-1 text-sm dark:text-gray-400 text-neutral-700">
+          <p className={cls("mt-1 text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>
             Structure of function positions; basis for many relation mappings.
           </p>
         </a>
         <a
-          className="border border-neutral-300 p-4 hover:bg-neutral-50 dark:border-gray-700 dark:hover:bg-gray-800"
+          className={cls("border p-4", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}
           href="https://wikisocion.github.io/content/Intertype_relations.html"
           target="_blank"
           rel="noopener"
         >
-          <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Reference</div>
-          <div className="text-lg font-semibold inline-flex items-center gap-2 dark:text-gray-300">
+          <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Reference</div>
+          <div className={cls("text-lg font-semibold inline-flex items-center gap-2", darkMode ? "text-white" : "text-black")}>
             Intertype relations <ExternalLink className="h-4 w-4" />
           </div>
-          <p className="mt-1 text-sm dark:text-gray-400 text-neutral-700">
+          <p className={cls("mt-1 text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>
             Overview of relation names and general descriptions.
           </p>
         </a>
@@ -1566,14 +1567,14 @@ function Library() {
   );
 }
 
-function About() {
+function About({ darkMode }) {
   return (
     <section className="pt-10 max-w-3xl">
-      <h1 className="text-3xl font-semibold tracking-tight dark:text-gray-200">About</h1>
-      <p className="mt-2 dark:text-gray-400 text-neutral-700">
+      <h1 className={cls("text-3xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>About</h1>
+      <p className={cls("mt-2", darkMode ? "text-gray-400" : "text-neutral-700")}>
         This is a community MVP that reorganizes Wikisocion content for clarity and mobile use while linking back to canonical pages. It follows accessibility best practices (keyboard navigation, high contrast, reduced motion respect) and a Swiss typographic aesthetic.
       </p>
-      <ul className="mt-4 list-disc pl-6 text-neutral-700 text-sm dark:text-gray-400">
+      <ul className={cls("mt-4 list-disc pl-6 text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>
         <li>Open source, non-commercial.</li>
         <li>Typography: Inter/Helvetica-like sans; minimal color with a single red accent.</li>
         <li>Privacy-friendly analytics suggested: simple counts for search success, time-to-type page, relation lookups.</li>
@@ -1582,7 +1583,7 @@ function About() {
   );
 }
 
-function StartHere({ onNav }) {
+function StartHere({ onNav, darkMode }) {
   const [step, setStep] = useState(1);
   const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
@@ -1616,7 +1617,7 @@ function StartHere({ onNav }) {
 
   return (
     <section className="pt-10 max-w-3xl">
-      <h1 className="text-3xl font-semibold tracking-tight dark:text-gray-200">Start here</h1>
+      <h1 className={cls("text-3xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>Start here</h1>
       
       {/* Progress bar */}
       <div className="mt-6 w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
@@ -1625,28 +1626,32 @@ function StartHere({ onNav }) {
           style={{ width: `${progress}%` }}
         ></div>
       </div>
-      <div className="text-right text-xs text-gray-500 dark:text-gray-400 mt-1">
+      <div className={cls("text-right text-xs mt-1", darkMode ? "text-gray-400" : "text-gray-500")}>
         Step {step} of {totalSteps}
       </div>
 
-      <ol className="mt-6 space-y-4 text-neutral-800 dark:text-gray-300">
+      <ol className="mt-6 space-y-4">
         {steps.map((s, index) => (
           <li 
             key={index}
             className={cls(
               "border p-4 rounded transition-all duration-300",
               step === index + 1 
-                ? "border-red-600 dark:border-red-500 shadow-sm" 
-                : "border-neutral-300 dark:border-gray-700 opacity-80"
+                ? darkMode 
+                  ? "border-red-500 shadow-sm" 
+                  : "border-red-600 shadow-sm"
+                : darkMode 
+                  ? "border-gray-700 opacity-80" 
+                  : "border-neutral-300 opacity-80"
             )}
           >
-            <div className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Step {index + 1}</div>
-            <div className="text-lg font-semibold">{s.title}</div>
-            <p className="mt-1 text-sm dark:text-gray-400">
+            <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Step {index + 1}</div>
+            <div className={cls("text-lg font-semibold", darkMode ? "text-white" : "text-black")}>{s.title}</div>
+            <p className={cls("mt-1 text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>
               {s.description}
             </p>
             {step === index + 1 && (
-              <p className="mt-2 text-sm italic dark:text-gray-500">
+              <p className={cls("mt-2 text-sm italic", darkMode ? "text-gray-500" : "text-neutral-700")}>
                 {s.details}
               </p>
             )}
@@ -1657,14 +1662,14 @@ function StartHere({ onNav }) {
       <div className="mt-6 flex items-center gap-3">
         <button 
           onClick={prev} 
-          className="px-3 py-1 border border-neutral-300 text-sm dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 rounded transition-colors"
+          className={cls("px-3 py-1 text-sm rounded transition-colors", darkMode ? "border-gray-700 text-white hover:bg-gray-800" : "border-neutral-300 text-black hover:bg-neutral-200")}
           disabled={step === 1}
         >
           Back
         </button>
         <button 
           onClick={next} 
-          className="px-3 py-1 bg-red-600 text-white text-sm hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 rounded transition-colors"
+          className={cls("px-3 py-1 text-white text-sm rounded transition-colors", darkMode ? "bg-red-700 hover:bg-red-800" : "bg-red-600 hover:bg-red-700")}
           disabled={step === totalSteps}
         >
           Next
@@ -1672,7 +1677,7 @@ function StartHere({ onNav }) {
         {step === totalSteps && (
           <button 
             onClick={() => onNav("types")} 
-            className="ml-auto px-3 py-1 bg-red-600 text-white text-sm hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 rounded transition-all duration-300 transform hover:scale-105 flex items-center gap-1"
+            className={cls("ml-auto px-3 py-1 text-white text-sm rounded transition-all duration-300 transform hover:scale-105 flex items-center gap-1", darkMode ? "bg-red-700 hover:bg-red-800" : "bg-red-600 hover:bg-red-700")}
           >
             Explore Types <ArrowRight className="h-4 w-4" />
           </button>
@@ -1682,7 +1687,7 @@ function StartHere({ onNav }) {
   );
 }
 
-function TypeCompare({ types, duals }) {
+function TypeCompare({ types, duals, darkMode }) {
   const [typeA, setTypeA] = useState("ILE");
   const [typeB, setTypeB] = useState("SEI");
   
@@ -1708,46 +1713,46 @@ function TypeCompare({ types, duals }) {
   
   return (
     <section className="pt-10">
-      <h1 className="text-3xl font-semibold tracking-tight dark:text-gray-200">Type Comparison</h1>
-      <p className="mt-2 dark:text-gray-400 text-neutral-700">
+      <h1 className={cls("text-3xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>Type Comparison</h1>
+      <p className={cls("mt-2", darkMode ? "text-gray-400" : "text-neutral-700")}>
         Compare two socionics types side by side to see their similarities and differences.
       </p>
       
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Select types={types} label="Type A" value={typeA} setValue={setTypeA} />
-        <Select types={types} label="Type B" value={typeB} setValue={setTypeB} />
+        <Select types={types} label="Type A" value={typeA} setValue={setTypeA} darkMode={darkMode} />
+        <Select types={types} label="Type B" value={typeB} setValue={setTypeB} darkMode={darkMode} />
       </div>
       
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Type A Card */}
         <div className="border border-neutral-300 p-6 dark:border-gray-700">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-2xl font-semibold dark:text-gray-200">
+            <h2 className={cls("text-2xl font-semibold", darkMode ? "text-white" : "text-black")}>
               <span className="font-mono mr-2">{a.code}</span>
               {a.fullName}
             </h2>
-            <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600 dark:text-gray-400">{a.alias}</span>
+            <span className={cls("text-xs px-1.5 py-0.5 border", darkMode ? "border-gray-600 text-gray-300" : "border-neutral-300 text-neutral-700")}>{a.alias}</span>
           </div>
           
           <div className="mt-4 space-y-3">
             <div>
-              <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Quadra</span>
-              <div className="text-lg dark:text-gray-300">{a.quadra}</div>
+              <span className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Quadra</span>
+              <div className={cls("text-lg", darkMode ? "text-white" : "text-black")}>{a.quadra}</div>
             </div>
             <div>
-              <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Temperament</span>
-              <div className="text-lg dark:text-gray-300">{a.temperament}</div>
+              <span className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Temperament</span>
+              <div className={cls("text-lg", darkMode ? "text-white" : "text-black")}>{a.temperament}</div>
             </div>
             <div>
-              <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Functions</span>
+              <span className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Functions</span>
               <div className="mt-1 flex gap-4">
                 <div>
-                  <span className="text-sm dark:text-gray-400">Leading:</span>
-                  <div className="font-mono text-lg dark:text-gray-300">{a.leading}</div>
+                  <span className={cls("text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>Leading:</span>
+                  <div className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{a.leading}</div>
                 </div>
                 <div>
-                  <span className="text-sm dark:text-gray-400">Creative:</span>
-                  <div className="font-mono text-lg dark:text-gray-300">{a.creative}</div>
+                  <span className={cls("text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>Creative:</span>
+                  <div className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{a.creative}</div>
                 </div>
               </div>
             </div>
@@ -1757,32 +1762,32 @@ function TypeCompare({ types, duals }) {
         {/* Type B Card */}
         <div className="border border-neutral-300 p-6 dark:border-gray-700">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-2xl font-semibold dark:text-gray-200">
+            <h2 className={cls("text-2xl font-semibold", darkMode ? "text-white" : "text-black")}>
               <span className="font-mono mr-2">{b.code}</span>
               {b.fullName}
             </h2>
-            <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600 dark:text-gray-400">{b.alias}</span>
+            <span className={cls("text-xs px-1.5 py-0.5 border", darkMode ? "border-gray-600 text-gray-300" : "border-neutral-300 text-neutral-700")}>{b.alias}</span>
           </div>
           
           <div className="mt-4 space-y-3">
             <div>
-              <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Quadra</span>
-              <div className="text-lg dark:text-gray-300">{b.quadra}</div>
+              <span className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Quadra</span>
+              <div className={cls("text-lg", darkMode ? "text-white" : "text-black")}>{b.quadra}</div>
             </div>
             <div>
-              <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Temperament</span>
-              <div className="text-lg dark:text-gray-300">{b.temperament}</div>
+              <span className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Temperament</span>
+              <div className={cls("text-lg", darkMode ? "text-white" : "text-black")}>{b.temperament}</div>
             </div>
             <div>
-              <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-gray-500">Functions</span>
+              <span className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Functions</span>
               <div className="mt-1 flex gap-4">
                 <div>
-                  <span className="text-sm dark:text-gray-400">Leading:</span>
-                  <div className="font-mono text-lg dark:text-gray-300">{b.leading}</div>
+                  <span className={cls("text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>Leading:</span>
+                  <div className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{b.leading}</div>
                 </div>
                 <div>
-                  <span className="text-sm dark:text-gray-400">Creative:</span>
-                  <div className="font-mono text-lg dark:text-gray-300">{b.creative}</div>
+                  <span className={cls("text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>Creative:</span>
+                  <div className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{b.creative}</div>
                 </div>
               </div>
             </div>
@@ -1792,37 +1797,37 @@ function TypeCompare({ types, duals }) {
       
       {/* Comparison Results */}
       <div className="mt-6 border border-neutral-300 p-6 dark:border-gray-700">
-        <h2 className="text-2xl font-semibold dark:text-gray-200">Comparison</h2>
+        <h2 className={cls("text-2xl font-semibold", darkMode ? "text-white" : "text-black")}>Comparison</h2>
         
         {isDual && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded dark:bg-red-900/30 dark:border-red-800">
-            <div className="font-semibold text-red-800 dark:text-red-200">Duality Pair</div>
-            <p className="mt-1 text-red-700 dark:text-red-300">
+          <div className={cls("mt-4 p-3 border rounded", darkMode ? "bg-red-900/30 border-red-800" : "bg-red-50 border-red-200")}>
+            <div className={cls("font-semibold", darkMode ? "text-red-200" : "text-red-800")}>Duality Pair</div>
+            <p className={cls("mt-1", darkMode ? "text-red-300" : "text-red-700")}>
               These types form a duality pair, which means they have complementary strengths and can provide what the other lacks.
             </p>
           </div>
         )}
         
         <div className="mt-4">
-          <h3 className="font-semibold dark:text-gray-300">Shared Traits</h3>
+          <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Shared Traits</h3>
           <div className="mt-2 flex flex-wrap gap-2">
             {sharedQuadra && (
-              <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded dark:bg-red-900 dark:text-red-100">
+              <span className={cls("px-2 py-1 text-xs rounded", darkMode ? "bg-red-900 text-red-100" : "bg-red-100 text-red-800")}>
                 Same Quadra ({a.quadra})
               </span>
             )}
             {sharedTemperament && (
-              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded dark:bg-blue-900 dark:text-blue-100">
+              <span className={cls("px-2 py-1 text-xs rounded", darkMode ? "bg-blue-900 text-blue-100" : "bg-blue-100 text-blue-800")}>
                 Same Temperament ({a.temperament})
               </span>
             )}
             {sharedLeading && (
-              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded dark:bg-green-900 dark:text-green-100">
+              <span className={cls("px-2 py-1 text-xs rounded", darkMode ? "bg-green-900 text-green-100" : "bg-green-100 text-green-800")}>
                 Same Leading Function ({a.leading})
               </span>
             )}
             {sharedCreative && (
-              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded dark:bg-yellow-900 dark:text-yellow-100">
+              <span className={cls("px-2 py-1 text-xs rounded", darkMode ? "bg-yellow-900 text-yellow-100" : "bg-yellow-100 text-yellow-800")}>
                 Same Creative Function ({a.creative})
               </span>
             )}
@@ -1830,28 +1835,28 @@ function TypeCompare({ types, duals }) {
         </div>
         
         <div className="mt-4">
-          <h3 className="font-semibold dark:text-gray-300">Function Comparison</h3>
+          <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Function Comparison</h3>
           <div className="mt-2 overflow-x-auto">
-            <table className="min-w-full divide-y divide-neutral-300 dark:divide-gray-700">
+            <table className="min-w-full divide-y dark:divide-gray-700 divide-neutral-300">
               <thead>
                 <tr>
-                  <th className="py-2 text-left text-xs font-medium text-neutral-500 dark:text-gray-400">Function</th>
-                  <th className="py-2 text-left text-xs font-medium text-neutral-500 dark:text-gray-400">{a.code}</th>
-                  <th className="py-2 text-left text-xs font-medium text-neutral-500 dark:text-gray-400">{b.code}</th>
-                  <th className="py-2 text-left text-xs font-medium text-neutral-500 dark:text-gray-400">Match</th>
+                  <th className={cls("py-2 text-left text-xs font-medium", darkMode ? "text-gray-400" : "text-neutral-500")}>Function</th>
+                  <th className={cls("py-2 text-left text-xs font-medium", darkMode ? "text-gray-400" : "text-neutral-500")}>{a.code}</th>
+                  <th className={cls("py-2 text-left text-xs font-medium", darkMode ? "text-gray-400" : "text-neutral-500")}>{b.code}</th>
+                  <th className={cls("py-2 text-left text-xs font-medium", darkMode ? "text-gray-400" : "text-neutral-500")}>Match</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-300 dark:divide-gray-700">
+              <tbody className="divide-y dark:divide-gray-700 divide-neutral-300">
                 {functionComparison.map((func, index) => (
                   <tr key={index}>
-                    <td className="py-2 text-sm dark:text-gray-300">{func.name}</td>
-                    <td className="py-2 font-mono text-sm dark:text-gray-300">{func.a}</td>
-                    <td className="py-2 font-mono text-sm dark:text-gray-300">{func.b}</td>
+                    <td className={cls("py-2 text-sm", darkMode ? "text-gray-300" : "text-black")}>{func.name}</td>
+                    <td className={cls("py-2 font-mono text-sm", darkMode ? "text-white" : "text-black")}>{func.a}</td>
+                    <td className={cls("py-2 font-mono text-sm", darkMode ? "text-white" : "text-black")}>{func.b}</td>
                     <td className="py-2 text-sm">
                       {func.same ? (
-                        <span className="text-green-600 dark:text-green-400">✓ Match</span>
+                        <span className={darkMode ? "text-green-400" : "text-green-600"}>✓ Match</span>
                       ) : (
-                        <span className="text-red-600 dark:text-red-400">✗ Different</span>
+                        <span className={darkMode ? "text-red-400" : "text-red-600"}>✗ Different</span>
                       )}
                     </td>
                   </tr>
@@ -1865,23 +1870,23 @@ function TypeCompare({ types, duals }) {
   );
 }
 
-function SiteFooter() {
+function SiteFooter({ darkMode }) {
   return (
-    <footer className="border-t border-neutral-200 py-10 mt-16 dark:border-gray-700">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-sm text-neutral-600 dark:text-gray-400">
+    <footer className={cls("border-t py-10 mt-16", darkMode ? "border-gray-700" : "border-neutral-200")}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-sm">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <div className="font-semibold tracking-tight dark:text-gray-300">Wikisocion — MVP</div>
-            <div>Swiss-inspired layout. Community prototype.</div>
+            <div className={cls("font-semibold tracking-tight", darkMode ? "text-gray-300" : "text-black")}>Wikisocion — MVP</div>
+            <div className={cls("", darkMode ? "text-gray-400" : "text-neutral-600")}>Swiss-inspired layout. Community prototype.</div>
           </div>
           <div className="flex gap-4">
-            <a className="hover:text-neutral-900 dark:hover:text-gray-300" href="https://wikisocion.github.io/" target="_blank" rel="noopener">
+            <a className={cls("hover:", darkMode ? "text-gray-300" : "text-neutral-900")} href="https://wikisocion.github.io/" target="_blank" rel="noopener">
               Archive
             </a>
-            <a className="hover:text-neutral-900 dark:hover:text-gray-300" href="#">
+            <a className={cls("hover:", darkMode ? "text-gray-300" : "text-neutral-900")} href="#">
               Changelog
             </a>
-            <a className="hover:text-neutral-900 dark:hover:text-gray-300" href="#">
+            <a className={cls("hover:", darkMode ? "text-gray-300" : "text-neutral-900")} href="#">
               Contribute
             </a>
           </div>
