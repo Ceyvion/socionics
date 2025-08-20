@@ -1434,7 +1434,7 @@ function classifyRelation(aType, bType, duals) {
   if (!aType || !bType) return { key: 'Other', color: RELATION_COLORS.Other };
   const key = [aType.code, bType.code].sort().join('-');
   const isIdentity = aType.code === bType.code;
-  const isDual = duals.has(key);
+  const isDual = !!duals && typeof duals.has === 'function' ? duals.has(key) : false;
   const sameQuadra = aType.quadra === bType.quadra;
   const sameTemp = aType.temperament === bType.temperament;
   const sameLead = aType.leading === bType.leading;
@@ -1478,10 +1478,12 @@ function RelationChips({ a, b, darkMode }) {
 }
 
 function RadialRelations({ types, activeA, activeB, onSelectB, darkMode, duals }) {
+  if (!types || !types.length) return null;
   const size = 420;
   const cx = size/2, cy = size/2;
   const R = 160; // node radius from center
-  const aIndex = types.findIndex(t => t.code === activeA);
+  const aIndexRaw = types.findIndex(t => t.code === activeA);
+  const aIndex = aIndexRaw < 0 ? 0 : aIndexRaw;
   const ordered = [...types.slice(aIndex), ...types.slice(0, aIndex)];
   // layout: activeA at top (-90deg), others clockwise
   const nodes = ordered.map((t, i) => {
@@ -1491,7 +1493,7 @@ function RadialRelations({ types, activeA, activeB, onSelectB, darkMode, duals }
     return { t, i, angle, x, y };
   });
   const aNode = nodes[0];
-  const bNode = nodes.find(n => n.t.code === activeB) || nodes[1];
+  const bNode = nodes.find(n => n.t.code === activeB) || nodes[0];
 
   const pathFor = (x1,y1,x2,y2) => {
     const dx = (x2 - x1) * 0.25;
@@ -1554,6 +1556,7 @@ function RadialRelations({ types, activeA, activeB, onSelectB, darkMode, duals }
 }
 
 function FunctionRings({ a, b, darkMode }) {
+  if (!a || !b) return null;
   const size = 240, cx = size/2, cy = size/2;
   const innerR = 56, outerR = 84; // ring radii
   const full = 2*Math.PI;
