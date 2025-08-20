@@ -282,6 +282,7 @@ export default function WikisocionMVP() {
   const byCode = Object.fromEntries(types.map(t => [t.code, t]));
   const DUALS = new Set(relations.filter(r=>r.name==="Duality").map(r => [r.a, r.b].sort().join("-")));
   
+  const relInfo = classifyRelation(typeA, typeB, duals);
   return (
     <div className={cls("min-h-screen", darkMode ? "bg-gray-900 text-white" : "bg-white text-black")}>
       <a
@@ -1374,114 +1375,239 @@ function Relations({ types, duals, relations, onNav, darkMode }) {
         <Select types={types} label="Type B" value={b} setValue={setB} darkMode={darkMode} />
       </div>
 
+      {/* Hero summary */}
       <div className="mt-6 card p-6">
-        <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Primary Relation</div>
+        <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Relation</div>
         <div className={cls("mt-1 text-2xl font-semibold", darkMode ? "text-white" : "text-black")}>
-          {isIdentity ? "Identity" : 
-           isDualSame ? "Duality" : 
-           isActivator ? "Activation" : 
-           isMirror ? "Mirror" : 
-           isSemiDual ? "Semi-duality" : 
-           isExtinguishment ? "Extinguishment" : 
-           isConflict ? "Conflict" : 
-           isBusiness ? "Business" : 
-           isSuperEgo ? "Super-ego" : 
-           "Other"}
+          {a} ↔ {b}
         </div>
-        
-        <div className="mt-4">
-          <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Relation Characteristics</h3>
-          <ul className={cls("mt-2 space-y-2 text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>
-            {isIdentity && (
-              <li>• Same type - complete understanding but potential for stagnation</li>
-            )}
-            {isDualSame && relation && (
-              <li>• {relation.summary}</li>
-            )}
-            {isActivator && (
-              <li>• Stimulating but exhausting relationship; each activates the other's suggestive function</li>
-            )}
-            {isMirror && (
-              <li>• Similar approach but different perspective; can be either very comfortable or frustrating</li>
-            )}
-            {isSemiDual && (
-              <li>• Partially complementary; one benefits more than the other</li>
-            )}
-            {isExtinguishment && (
-              <li>• Functions clash; can be challenging but also growth-promoting</li>
-            )}
-            {isConflict && (
-              <li>• Opposite values; naturally irritating but can learn from each other</li>
-            )}
-            {isBusiness && (
-              <li>• Quadra neighbors; share some values but have different approaches</li>
-            )}
-            {isSuperEgo && (
-              <li>• Complex relationship; both similar and different in challenging ways</li>
-            )}
-          </ul>
-        </div>
-        
-        <div className="mt-4">
-          <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Shared Traits</h3>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {isSameQuadra && (
-              <span className={cls("px-2 py-1 text-xs rounded", darkMode ? "bg-red-900 text-red-100" : "bg-red-100 text-red-800")}>
-                Same Quadra ({typeA.quadra})
-              </span>
-            )}
-            {isSameTemperament && (
-              <span className={cls("px-2 py-1 text-xs rounded", darkMode ? "bg-blue-900 text-blue-100" : "bg-blue-100 text-blue-800")}>
-                Same Temperament ({typeA.temperament})
-              </span>
-            )}
-            {isSameLeading && (
-              <span className={cls("px-2 py-1 text-xs rounded", darkMode ? "bg-green-900 text-green-100" : "bg-green-100 text-green-800")}>
-                Same Leading Function ({typeA.leading})
-              </span>
-            )}
-            {isSameCreative && (
-              <span className={cls("px-2 py-1 text-xs rounded", darkMode ? "bg-yellow-900 text-yellow-100" : "bg-yellow-100 text-yellow-800")}>
-                Same Creative Function ({typeA.creative})
-              </span>
-            )}
-          </div>
+        <div className="mt-2 flex flex-wrap gap-2 items-center">
+          <span className="chip" style={{borderColor: relInfo.color, color: relInfo.color}}>{relInfo.key}</span>
+          <RelationChips a={typeA} b={typeB} darkMode={darkMode} />
         </div>
       </div>
-      
-      {/* Visual relationship diagram */}
-      <div className="mt-6 card p-6">
-        <h2 className={cls("text-xl font-semibold", darkMode ? "text-white" : "text-black")}>Function Comparison</h2>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="card p-4">
-            <h3 className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{a} Functions</h3>
-            <div className="mt-2 space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className={cls("", darkMode ? "text-gray-300" : "text-neutral-700")}>Leading:</span>
-                <span className={cls("font-mono", darkMode ? "text-white" : "text-black")}>{typeA.leading}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className={cls("", darkMode ? "text-gray-300" : "text-neutral-700")}>Creative:</span>
-                <span className={cls("font-mono", darkMode ? "text-white" : "text-black")}>{typeA.creative}</span>
-              </div>
-            </div>
-          </div>
-          <div className="card p-4">
-            <h3 className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{b} Functions</h3>
-            <div className="mt-2 space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className={cls("", darkMode ? "text-gray-300" : "text-neutral-700")}>Leading:</span>
-                <span className={cls("font-mono", darkMode ? "text-white" : "text-black")}>{typeB.leading}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className={cls("", darkMode ? "text-gray-300" : "text-neutral-700")}>Creative:</span>
-                <span className={cls("font-mono", darkMode ? "text-white" : "text-black")}>{typeB.creative}</span>
-              </div>
-            </div>
-          </div>
+
+      {/* Visuals */}
+      <div className="mt-6 grid lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-8 card p-4">
+          <h2 className={cls("text-lg font-semibold", darkMode ? "text-white" : "text-black")}>Radial Map</h2>
+          <RadialRelations
+            types={types}
+            activeA={a}
+            activeB={b}
+            onSelectB={setB}
+            darkMode={darkMode}
+            duals={duals}
+          />
+        </div>
+        <div className="lg:col-span-4 card p-4">
+          <h2 className={cls("text-lg font-semibold", darkMode ? "text-white" : "text-black")}>Function Rings</h2>
+          <FunctionRings a={typeA} b={typeB} darkMode={darkMode} />
         </div>
       </div>
     </section>
+  );
+}
+
+// --- Visual helpers ---
+const IE_COLORS = {
+  Ne: '#0891b2', Ni: '#7c3aed',
+  Se: '#ea580c', Si: '#16a34a',
+  Te: '#0ea5e9', Ti: '#1e293b',
+  Fe: '#ef4444', Fi: '#f59e0b',
+};
+
+const RELATION_COLORS = {
+  Identity: '#475569',
+  Duality: '#16a34a',
+  Activation: '#06b6d4',
+  Mirror: '#6366f1',
+  'Semi-duality': '#14b8a6',
+  Extinguishment: '#94a3b8',
+  Conflict: '#ef4444',
+  Business: '#f97316',
+  'Super-ego': '#eab308',
+  Other: '#64748b',
+};
+
+function classifyRelation(aType, bType, duals) {
+  if (!aType || !bType) return { key: 'Other', color: RELATION_COLORS.Other };
+  const key = [aType.code, bType.code].sort().join('-');
+  const isIdentity = aType.code === bType.code;
+  const isDual = duals.has(key);
+  const sameQuadra = aType.quadra === bType.quadra;
+  const sameTemp = aType.temperament === bType.temperament;
+  const sameLead = aType.leading === bType.leading;
+  const sameCreative = aType.creative === bType.creative;
+  const activator = aType.leading === bType.creative && aType.creative === bType.leading;
+  const mirror = sameLead && sameCreative && !isIdentity;
+  const semiDual = (aType.leading === bType.creative && !activator) || (bType.leading === aType.creative && !activator);
+  const quadraOrder = ['Alpha','Beta','Gamma','Delta'];
+  const qd = Math.abs(quadraOrder.indexOf(aType.quadra) - quadraOrder.indexOf(bType.quadra));
+  const business = (qd === 1 || qd === 3) && !isDual && !semiDual;
+  const conflict = (qd === 2) && !sameQuadra && !isDual;
+  const extinguishment = (sameLead && !isIdentity) || (sameCreative && !mirror);
+  const superEgo = !isIdentity && !isDual && !sameQuadra && !activator && !mirror && !semiDual && !extinguishment && !business;
+  const label = isIdentity ? 'Identity' :
+    isDual ? 'Duality' :
+    activator ? 'Activation' :
+    mirror ? 'Mirror' :
+    semiDual ? 'Semi-duality' :
+    extinguishment ? 'Extinguishment' :
+    conflict ? 'Conflict' :
+    business ? 'Business' :
+    superEgo ? 'Super-ego' : 'Other';
+  return { key: label, color: RELATION_COLORS[label] || RELATION_COLORS.Other };
+}
+
+function RelationChips({ a, b, darkMode }) {
+  const sameQuadra = a.quadra === b.quadra;
+  const sameTemp = a.temperament === b.temperament;
+  const sameLead = a.leading === b.leading;
+  const sameCreative = a.creative === b.creative;
+  return (
+    <div className="mt-3 flex flex-wrap gap-2 text-xs">
+      {sameQuadra && <span className="chip">Same quadra: {a.quadra}</span>}
+      {sameTemp && <span className="chip">Same temperament: {a.temperament}</span>}
+      {sameLead && <span className="chip">Leading: {a.leading}</span>}
+      {sameCreative && <span className="chip">Creative: {a.creative}</span>}
+      {!sameQuadra && <span className="chip">Quadra: {a.quadra} vs {b.quadra}</span>}
+      {!sameTemp && <span className="chip">Temperament: {a.temperament} vs {b.temperament}</span>}
+    </div>
+  );
+}
+
+function RadialRelations({ types, activeA, activeB, onSelectB, darkMode, duals }) {
+  const size = 420;
+  const cx = size/2, cy = size/2;
+  const R = 160; // node radius from center
+  const aIndex = types.findIndex(t => t.code === activeA);
+  const ordered = [...types.slice(aIndex), ...types.slice(0, aIndex)];
+  // layout: activeA at top (-90deg), others clockwise
+  const nodes = ordered.map((t, i) => {
+    const angle = -Math.PI/2 + (2*Math.PI * i)/types.length;
+    const x = cx + R * Math.cos(angle);
+    const y = cy + R * Math.sin(angle);
+    return { t, i, angle, x, y };
+  });
+  const aNode = nodes[0];
+  const bNode = nodes.find(n => n.t.code === activeB) || nodes[1];
+
+  const pathFor = (x1,y1,x2,y2) => {
+    const dx = (x2 - x1) * 0.25;
+    const dy = (y2 - y1) * 0.25;
+    const c1x = x1 + dx, c1y = y1 + dy;
+    const c2x = x2 - dx, c2y = y2 - dy;
+    return `M ${x1},${y1} C ${c1x},${c1y} ${c2x},${c2y} ${x2},${y2}`;
+  };
+
+  return (
+    <div className="w-full overflow-x-auto">
+      <svg width="100%" height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Radial relations map">
+        <defs>
+          <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        {/* center label */}
+        <text x={cx} y={cy-6} textAnchor="middle" className={darkMode? 'fill-white' : 'fill-black'} style={{fontSize: 14, fontWeight: 600}}>{aNode.t.code}</text>
+        <text x={cx} y={cy+12} textAnchor="middle" className={darkMode? 'fill-gray-400' : 'fill-neutral-600'} style={{fontSize: 11}}>{aNode.t.fullName}</text>
+
+        {/* ribbons from A to others */}
+        {nodes.slice(1).map((n, idx) => {
+          const rel = classifyRelation(aNode.t, n.t, duals);
+          const color = n.t.code === activeB ? '#ef4444' : (rel.color || '#94a3b8');
+          const d = pathFor(aNode.x, aNode.y, n.x, n.y);
+          const emphasis = n.t.code === activeB ? 2.5 : 1.25;
+          return (
+            <path key={n.t.code} d={d} stroke={color} strokeWidth={emphasis} fill="none" opacity={n.t.code === activeB ? 0.95 : 0.5} filter="url(#softGlow)" />
+          );
+        })}
+
+        {/* nodes */}
+        {nodes.map((n) => {
+          const isA = n.t.code === activeA;
+          const isB = n.t.code === activeB;
+          const r = isA ? 8 : 6;
+          const fill = isA ? '#ef4444' : (isB ? '#0ea5e9' : (darkMode ? '#334155' : '#e5e7eb'));
+          const stroke = darkMode ? '#64748b' : '#94a3b8';
+          return (
+            <g key={n.t.code} onClick={() => !isA && onSelectB(n.t.code)} style={{cursor: isA ? 'default' : 'pointer'}}>
+              <circle cx={n.x} cy={n.y} r={r} fill={fill} stroke={stroke} />
+              {/* labels */}
+              {!isA && (
+                <text x={n.x + (Math.cos(n.angle)*12)} y={n.y + (Math.sin(n.angle)*12)} className={darkMode? 'fill-gray-300' : 'fill-neutral-700'} style={{fontSize: 11}} textAnchor={Math.cos(n.angle)>0? 'start':'end'} dy={3}>
+                  {n.t.code}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      <div className={cls('mt-2 text-xs', darkMode? 'text-gray-400':'text-neutral-600')}>Tip: click a node to set Type B.</div>
+    </div>
+  );
+}
+
+function FunctionRings({ a, b, darkMode }) {
+  const size = 240, cx = size/2, cy = size/2;
+  const innerR = 56, outerR = 84; // ring radii
+  const full = 2*Math.PI;
+  // We only render Leading (pos1) and Creative (pos2) slices for both
+  const slices = [
+    { label: 'Leading', pos: 0, a: a.leading, b: b.leading },
+    { label: 'Creative', pos: 1, a: a.creative, b: b.creative },
+  ];
+  const arc = (r, start, end) => {
+    const sx = cx + r*Math.cos(start), sy = cy + r*Math.sin(start);
+    const ex = cx + r*Math.cos(end), ey = cy + r*Math.sin(end);
+    const large = end - start > Math.PI ? 1 : 0;
+    return `M ${sx} ${sy} A ${r} ${r} 0 ${large} 1 ${ex} ${ey}`;
+  };
+  const band = (r1, r2, start, end) => {
+    // outer arc -> inner arc back
+    const o = arc(r2, start, end);
+    const irev = arc(r1, end, start);
+    return `${o} ${irev} Z`;
+  };
+  const segAngle = full/8;
+  return (
+    <svg width="100%" height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Function rings">
+      {/* base rings */}
+      <circle cx={cx} cy={cy} r={outerR+10} fill="none" stroke={darkMode? '#1f2937' : '#e5e7eb'} />
+      <circle cx={cx} cy={cy} r={innerR-10} fill="none" stroke={darkMode? '#1f2937' : '#e5e7eb'} />
+      {slices.map((s, i) => {
+        const start = -Math.PI/2 + s.pos*segAngle;
+        const end = start + segAngle;
+        const aColor = IE_COLORS[s.a] || '#64748b';
+        const bColor = IE_COLORS[s.b] || '#94a3b8';
+        const match = s.a === s.b;
+        return (
+          <g key={s.label}>
+            <path d={band(innerR, innerR+20, start, end)} fill={aColor} opacity={0.9} />
+            <path d={band(outerR, outerR+20, start, end)} fill={bColor} opacity={0.7} />
+            {match && (
+              <path d={arc(outerR+22, start, end)} stroke={darkMode? '#fca5a5':'#ef4444'} strokeWidth="2" fill="none" />
+            )}
+            {/* labels */}
+            <text x={cx} y={cy - (innerR+outerR)/2} textAnchor="middle" className={darkMode? 'fill-gray-300' : 'fill-neutral-700'} style={{fontSize: 11}}>
+              {s.label}
+            </text>
+          </g>
+        );
+      })}
+      {/* legends */}
+      <g>
+        <rect x={16} y={size-42} width={10} height={10} fill="#334155" />
+        <text x={30} y={size-34} className={darkMode? 'fill-gray-300':'fill-neutral-700'} style={{fontSize: 11}}>A: {a.code}</text>
+        <rect x={96} y={size-42} width={10} height={10} fill="#9ca3af" />
+        <text x={110} y={size-34} className={darkMode? 'fill-gray-300':'fill-neutral-700'} style={{fontSize: 11}}>B: {b.code}</text>
+      </g>
+    </svg>
   );
 }
 function Select({ types, label, value, setValue, darkMode }) {
