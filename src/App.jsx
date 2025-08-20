@@ -383,14 +383,14 @@ function TopBar({ onNav, query, setQuery, searchRef, onResult, results, darkMode
             <button
               key={route}
               onClick={() => onNav(route)}
-              className={cls("hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-600 rounded-sm", darkMode ? "text-white hover:text-red-500" : "text-black")}
+              className={cls("nav-link", darkMode ? "text-white hover:text-red-500" : "text-black")}
             >
               {label}
             </button>
           ))}
         </nav>
         <div className="ml-auto relative flex-1 max-w-md">
-          <div className={cls("flex items-center rounded-sm focus-within:ring-2 focus-within:ring-red-600", darkMode ? "bg-gray-800 border border-gray-700" : "border border-neutral-300")}>
+          <div className={cls("input-wrap") }>
             <Search className={cls("ml-2 h-4 w-4", darkMode ? "text-gray-400" : "text-neutral-500")} />
             <input
               ref={searchRef}
@@ -398,22 +398,18 @@ function TopBar({ onNav, query, setQuery, searchRef, onResult, results, darkMode
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder={'Search: LII, "Model A", Fe... (/ to focus)'}
-              className={cls("w-full px-3 py-2 text-sm outline-none bg-transparent", darkMode ? "text-white placeholder-gray-500" : "text-neutral-900 placeholder-neutral-500")}
+              className={cls("input", darkMode ? "text-white placeholder-gray-500" : "text-neutral-900 placeholder-neutral-500")}
             />
           </div>
           {!!results.length && (
-            <div className={cls("absolute mt-1 w-full shadow-sm", darkMode ? "bg-gray-800 border border-gray-700" : "bg-white border border-neutral-200")}
+            <div className={cls("absolute mt-1 w-full rounded-md shadow-sm border overflow-hidden", darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-neutral-200")}
                  role="listbox" aria-label="Search results">
               {results.map((r, i) => (
                 <button
                   key={i}
                   onClick={() => onResult(r)}
                   onMouseEnter={() => setSelected(i)}
-                  className={cls(
-                    "w-full text-left px-3 py-2 text-sm focus:outline-none flex items-center gap-2",
-                    i === selected ? (darkMode ? "bg-gray-700" : "bg-neutral-100") : "",
-                    darkMode ? "text-white" : "text-black"
-                  )}
+                  className={cls("w-full text-left px-3 py-2 text-sm focus:outline-none flex items-center gap-2 border-b last:border-b-0", darkMode ? (i === selected ? "bg-gray-700 text-white border-gray-700" : "text-white border-gray-700") : (i === selected ? "bg-neutral-100 text-black border-neutral-200" : "text-black border-neutral-200"))}
                   role="option"
                   aria-selected={i === selected}
                 >
@@ -464,19 +460,19 @@ function Home({ onNav, types, darkMode }) {
           <div className="mt-8 flex flex-wrap gap-3">
             <button
               onClick={() => onNav("start")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm tracking-wide hover:bg-red-700"
+              className="btn btn-primary tracking-wide"
             >
               Start here <ArrowRight className="h-4 w-4" />
             </button>
             <button
               onClick={() => onNav("types")}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-300 text-sm dark:border-gray-600 dark:text-gray-300 hover:bg-neutral-100 dark:hover:bg-gray-800"
+              className="btn btn-secondary"
             >
               <TypeIcon className="h-4 w-4" /> Types
             </button>
             <button
               onClick={() => onNav("relations")}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-300 text-sm dark:border-gray-600 dark:text-gray-300 hover:bg-neutral-100 dark:hover:bg-gray-800"
+              className="btn btn-secondary"
             >
               <Network className="h-4 w-4" /> Relations
             </button>
@@ -512,7 +508,7 @@ function Home({ onNav, types, darkMode }) {
         </div>
       </div>
 
-      <div className="mt-16 border-t border-neutral-200 dark:border-gray-700 pt-8">
+      <div className="mt-16 border-t divider pt-8">
         <h2 className="text-2xl font-semibold">Quick type grid</h2>
         <p className="text-sm dark:text-gray-400 text-neutral-600">
           Tap a tile to open the type page. Long labels are simplified for readability.
@@ -529,10 +525,7 @@ function Home({ onNav, types, darkMode }) {
 
 function HomeTile({ title, subtitle, icon, onClick }) {
   return (
-    <button
-      onClick={onClick}
-      className="h-28 border border-neutral-300 text-left px-4 py-3 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-red-600 dark:border-gray-600 dark:hover:bg-gray-800"
-    >
+    <button onClick={onClick} className="card h-28 text-left px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-600">
       <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-gray-400">
         {icon}
         <span>{subtitle}</span>
@@ -560,7 +553,7 @@ function TypesIndex({ types, onOpen }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-semibold tracking-tight">Types</h1>
         <div className="flex items-center gap-2 text-sm">
-          <span className="inline-flex items-center gap-1 px-2 py-1 border border-neutral-300 dark:border-gray-600 dark:text-gray-300">
+          <span className="inline-flex items-center gap-1 px-2 py-1 border rounded-md border-neutral-300 dark:border-gray-600 dark:text-gray-300">
             <ListFilter className="h-4 w-4" /> Filters
           </span>
           <select
@@ -613,23 +606,23 @@ function TypesIndex({ types, onOpen }) {
             <button
               key={t.code}
               onClick={() => onOpen(t.code)}
-              className="border border-neutral-300 text-left px-4 py-3 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-red-600 dark:border-gray-600 dark:hover:bg-gray-800"
+              className="card text-left px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-600"
             >
               <div className="flex items-baseline justify-between">
                 <div className="font-mono text-2xl dark:text-white text-black">{t.code}</div>
-                <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600 dark:text-gray-300 text-neutral-800">{t.alias}</span>
+                <span className="chip">{t.alias}</span>
               </div>
               <div className="mt-1 text-sm dark:text-gray-300 text-neutral-900">{t.fullName}</div>
               <div className="mt-2 flex gap-2 text-xs dark:text-gray-500 text-neutral-600">
-                <span className="px-1 border border-neutral-300 dark:border-gray-600">{t.quadra}</span>
-                <span className="px-1 border border-neutral-300 dark:border-gray-600">{t.temperament}</span>
-                <span className="px-1 border border-neutral-300 dark:border-gray-600">{t.leading}/{t.creative}</span>
+                <span className="chip">{t.quadra}</span>
+                <span className="chip">{t.temperament}</span>
+                <span className="chip">{t.leading}/{t.creative}</span>
               </div>
             </button>
           ))}
         </div>
       ) : (
-        <div className="mt-6 divide-y divide-neutral-200 dark:divide-gray-700">
+        <div className="mt-6 divide-y divide-neutral-200 dark:divide-gray-800">
           {filtered.map((t) => (
             <button
               key={t.code}
@@ -659,16 +652,16 @@ function TypeCard({ type }) {
       href={type.href}
       target="_blank"
       rel="noopener noreferrer"
-      className="border border-neutral-300 px-4 py-3 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-red-600 dark:border-gray-600 dark:hover:bg-gray-800"
+      className="card px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-600"
     >
       <div className="flex items-baseline justify-between">
         <div className="font-mono text-2xl dark:text-white text-black">{type.code}</div>
-        <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600 dark:text-gray-300 text-neutral-800">{type.alias}</span>
+        <span className="chip">{type.alias}</span>
       </div>
       <div className="mt-1 text-sm dark:text-gray-300 text-neutral-900">{type.fullName}</div>
       <div className="mt-2 flex gap-2 text-xs dark:text-gray-500 text-neutral-600">
-        <span className="px-1 border border-neutral-300 dark:border-gray-600">{type.quadra}</span>
-        <span className="px-1 border border-neutral-300 dark:border-gray-600">{type.leading}/{type.creative}</span>
+        <span className="chip">{type.quadra}</span>
+        <span className="chip">{type.leading}/{type.creative}</span>
       </div>
       <div className="mt-2 inline-flex items-center gap-1 text-xs dark:text-gray-500 text-neutral-800">
         Open wiki <ExternalLink className="h-3 w-3" />
@@ -1075,17 +1068,17 @@ function TypeDetail({ types, duals, code, onBack, darkMode }) {
       </button>
       <div className="mt-4 grid lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8">
-          <div className="border border-neutral-300 p-6 dark:border-gray-700">
+          <div className="card p-6">
             <div className="flex items-baseline justify-between gap-3">
               <h1 className={cls("text-4xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>
                 <span className="font-mono mr-2">{t.code}</span>
                 {t.fullName}
               </h1>
               <div className="flex items-center gap-2">
-                <span className={cls("text-xs px-1.5 py-0.5 border", darkMode ? "border-gray-600 text-gray-300" : "border-neutral-300 text-neutral-700")}>{t.alias}</span>
+                <span className="chip">{t.alias}</span>
                 <button
                   onClick={() => { navigator.clipboard?.writeText(window.location.href); }}
-                  className={cls("text-xs px-2 py-1 border rounded", darkMode ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-neutral-300 text-black hover:bg-neutral-100")}
+                  className="btn btn-secondary text-xs"
                 >
                   Copy link
                 </button>
@@ -1098,13 +1091,13 @@ function TypeDetail({ types, duals, code, onBack, darkMode }) {
             <div className="mt-8">
               <h2 className="text-2xl font-semibold dark:text-gray-200">Core Characteristics</h2>
               <div className="mt-4 grid sm:grid-cols-2 gap-4">
-                <div className="border border-neutral-300 p-4 dark:border-gray-700">
+                <div className="card p-4">
                   <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Typical Strengths</h3>
                   <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-900")}>
                     {content.characteristics.strengths}
                   </p>
                 </div>
-                <div className="border border-neutral-300 p-4 dark:border-gray-700">
+                <div className="card p-4">
                   <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Common Challenges</h3>
                   <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-900")}>
                     {content.characteristics.challenges}
@@ -1116,19 +1109,19 @@ function TypeDetail({ types, duals, code, onBack, darkMode }) {
             <div className="mt-8">
               <h2 className="text-2xl font-semibold dark:text-gray-200">Interaction & Context</h2>
               <div className="mt-4 grid sm:grid-cols-3 gap-4">
-                <div className="border border-neutral-300 p-4 dark:border-gray-700">
+                <div className="card p-4">
                   <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Communication</h3>
                   <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-900")}>
                     {content.interaction.communication}
                   </p>
                 </div>
-                <div className="border border-neutral-300 p-4 dark:border-gray-700">
+                <div className="card p-4">
                   <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Work/Learning</h3>
                   <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-900")}>
                     {content.interaction.work}
                   </p>
                 </div>
-                <div className="border border-neutral-300 p-4 dark:border-gray-700">
+                <div className="card p-4">
                   <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Decision-making</h3>
                   <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-900")}>
                     {content.interaction.decision}
@@ -1151,7 +1144,7 @@ function TypeDetail({ types, duals, code, onBack, darkMode }) {
           </div>
         </div>
         <aside className="lg:col-span-4">
-          <div className="border border-neutral-300 p-4 dark:border-gray-700">
+          <div className="card p-4">
             <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Type Info</h3>
             <div className="mt-3 space-y-3">
               <div>
@@ -1173,13 +1166,13 @@ function TypeDetail({ types, duals, code, onBack, darkMode }) {
               href={t.href}
               target="_blank"
               rel="noopener"
-              className={cls("mt-4 block w-full text-center py-2 text-sm", darkMode ? "bg-gray-800 hover:bg-gray-700 text-gray-300" : "bg-neutral-100 hover:bg-neutral-200 text-black")}
+              className={cls("mt-4 block w-full text-center py-2 text-sm rounded-md", darkMode ? "bg-gray-800 hover:bg-gray-700 text-gray-300" : "bg-neutral-100 hover:bg-neutral-200 text-black")}
             >
               Canonical page
             </a>
           </div>
           
-          <div className="mt-4 border border-neutral-300 p-4 dark:border-gray-700">
+          <div className="mt-4 card p-4">
             <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Intertype Relations</h3>
             <p className={cls("text-sm mt-1", darkMode ? "text-gray-400" : "text-neutral-900")}>
               Key relations for {t.code}
@@ -1262,7 +1255,7 @@ function ModelA({ leading, creative, modelA, darkMode }) {
   return (
     <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
       {boxes.map((b, i) => (
-        <div key={i} className="border border-neutral-300 p-3 dark:border-gray-700">
+        <div key={i} className="card p-3">
           <div className="flex justify-between">
             <div className={cls("text-xs", darkMode ? "text-gray-500" : "text-neutral-500")}>{b.position}</div>
             <div className={cls("font-mono", (i === 0 || i === 1) && "text-red-700 font-semibold", darkMode && (i === 0 || i === 1) && "text-red-500")}>
@@ -1296,7 +1289,7 @@ function DualityList({ types, duals, self, darkMode }) {
   const t = byCode[other];
   return (
     <div className="mt-2 text-sm">
-      <div className="flex items-center justify-between border border-neutral-300 p-3 dark:border-gray-700">
+      <div className="flex items-center justify-between card p-3">
         <div>
           <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Dual type</div>
           <div className={cls("text-lg font-mono", darkMode ? "text-white" : "text-black")}>{t.code}</div>
@@ -1381,7 +1374,7 @@ function Relations({ types, duals, relations, onNav, darkMode }) {
         <Select types={types} label="Type B" value={b} setValue={setB} darkMode={darkMode} />
       </div>
 
-      <div className="mt-6 border border-neutral-300 p-6 dark:border-gray-700">
+      <div className="mt-6 card p-6">
         <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Primary Relation</div>
         <div className={cls("mt-1 text-2xl font-semibold", darkMode ? "text-white" : "text-black")}>
           {isIdentity ? "Identity" : 
@@ -1457,10 +1450,10 @@ function Relations({ types, duals, relations, onNav, darkMode }) {
       </div>
       
       {/* Visual relationship diagram */}
-      <div className="mt-6 border border-neutral-300 p-6 dark:border-gray-700">
+      <div className="mt-6 card p-6">
         <h2 className={cls("text-xl font-semibold", darkMode ? "text-white" : "text-black")}>Function Comparison</h2>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="border border-neutral-300 p-4 dark:border-gray-700">
+          <div className="card p-4">
             <h3 className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{a} Functions</h3>
             <div className="mt-2 space-y-1 text-sm">
               <div className="flex justify-between">
@@ -1473,7 +1466,7 @@ function Relations({ types, duals, relations, onNav, darkMode }) {
               </div>
             </div>
           </div>
-          <div className="border border-neutral-300 p-4 dark:border-gray-700">
+          <div className="card p-4">
             <h3 className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{b} Functions</h3>
             <div className="mt-2 space-y-1 text-sm">
               <div className="flex justify-between">
@@ -1501,7 +1494,7 @@ function Select({ types, label, value, setValue, darkMode }) {
         className={cls("w-full border px-2 py-2", darkMode ? "border-gray-700 bg-gray-800 text-white" : "border-neutral-300 text-black")}
       >
         {types.map((t) => (
-          <option key={t.code} className={darkMode ? "bg-gray-800" : ""}>
+          <option key={t.code} value={t.code} className={darkMode ? "bg-gray-800" : ""}>
             {t.code} — {t.fullName} ({t.alias})
           </option>
         ))}
@@ -1577,7 +1570,7 @@ function FunctionExplorer({ glossary, types, darkMode }) {
         </div>
       </div>
       
-      <div className="mt-6 border border-neutral-300 p-6 dark:border-gray-700">
+      <div className="mt-6 card p-6">
         <h2 className={cls("text-2xl font-semibold", darkMode ? "text-white" : "text-black")}>
           {selectedFunction}: {functionDetails?.shortDef.split(" - ")[1] || ""}
         </h2>
@@ -1593,7 +1586,7 @@ function FunctionExplorer({ glossary, types, darkMode }) {
                 <a
                   key={type.code}
                   href={`#/type/${type.code}`}
-                  className={cls("border p-3 text-center", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}
+                  className={cls("card p-3 text-center")}
                 >
                   <div className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{type.code}</div>
                   <div className={cls("text-xs mt-1", darkMode ? "text-gray-400" : "text-neutral-700")}>{type.alias}</div>
@@ -1609,7 +1602,7 @@ function FunctionExplorer({ glossary, types, darkMode }) {
                 <a
                   key={type.code}
                   href={`#/type/${type.code}`}
-                  className={cls("border p-3 text-center", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}
+                  className={cls("card p-3 text-center")}
                 >
                   <div className={cls("font-mono text-lg", darkMode ? "text-white" : "text-black")}>{type.code}</div>
                   <div className={cls("text-xs mt-1", darkMode ? "text-gray-400" : "text-neutral-700")}>{type.alias}</div>
@@ -1625,7 +1618,7 @@ function FunctionExplorer({ glossary, types, darkMode }) {
 
 function TheoryCard({ title, summary, onCTAClick, ctaLabel, darkMode }) {
   return (
-    <div className={cls("border p-4 flex flex-col h-full", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}>
+    <div className={cls("card p-4 flex flex-col h-full") }>
       <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Primer</div>
       <div className={cls("text-xl font-semibold", darkMode ? "text-white" : "text-black")}>{title}</div>
       <p className={cls("mt-1 flex-grow text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>{summary}</p>
@@ -1658,7 +1651,7 @@ function Glossary({ glossary, focus, darkMode }) {
       </p>
       <div className="mt-6 grid sm:grid-cols-2 gap-3">
         {glossary.map((g) => (
-          <div key={g.term} id={`gloss-${g.term}`} className="border border-neutral-300 p-3 dark:border-gray-700">
+          <div key={g.term} id={`gloss-${g.term}`} className="card p-3">
             <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Term</div>
             <div className={cls("text-lg font-mono", darkMode ? "text-white" : "text-black")}>{g.term}</div>
             <div className={cls("mt-1 text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>{g.shortDef}</div>
@@ -1676,7 +1669,7 @@ function Library({ darkMode }) {
       <p className={cls("mt-2", darkMode ? "text-gray-400" : "text-neutral-700")}>Curated entry points. Each item explains why it matters.</p>
       <div className="mt-6 grid md:grid-cols-3 gap-3">
         <a
-          className={cls("border p-4", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}
+          className={cls("card p-4")}
           href="https://wikisocion.github.io/"
           target="_blank"
           rel="noopener"
@@ -1690,7 +1683,7 @@ function Library({ darkMode }) {
           </p>
         </a>
         <a
-          className={cls("border p-4", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}
+          className={cls("card p-4")}
           href="https://wikisocion.github.io/content/Model_A.html"
           target="_blank"
           rel="noopener"
@@ -1704,7 +1697,7 @@ function Library({ darkMode }) {
           </p>
         </a>
         <a
-          className={cls("border p-4", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}
+          className={cls("card p-4")}
           href="https://wikisocion.github.io/content/Intertype_relations.html"
           target="_blank"
           rel="noopener"
@@ -1781,15 +1774,15 @@ function StartHere({ onNav, darkMode, types, glossary }) {
 
       {/* Quick actions (bite-sized) */}
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <button onClick={() => onNav('theory')} className={cls("border p-3 text-left", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}>
+        <button onClick={() => onNav('theory')} className={cls("card p-3 text-left")}>
           <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>1. Learn</div>
           <div className={cls("mt-1 flex items-center gap-2 font-semibold", darkMode ? "text-white" : "text-black")}><BookOpen className="h-4 w-4"/> Basics (1 min)</div>
         </button>
-        <button onClick={() => onNav('types')} className={cls("border p-3 text-left", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}>
+        <button onClick={() => onNav('types')} className={cls("card p-3 text-left")}>
           <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>2. Explore</div>
           <div className={cls("mt-1 flex items-center gap-2 font-semibold", darkMode ? "text-white" : "text-black")}><TypeIcon className="h-4 w-4"/> Browse types</div>
         </button>
-        <button onClick={() => onNav('compare')} className={cls("border p-3 text-left", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}>
+        <button onClick={() => onNav('compare')} className={cls("card p-3 text-left")}>
           <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>3. Decide</div>
           <div className={cls("mt-1 flex items-center gap-2 font-semibold", darkMode ? "text-white" : "text-black")}><Rows className="h-4 w-4"/> Compare two</div>
         </button>
@@ -1887,10 +1880,10 @@ function StartHere({ onNav, darkMode, types, glossary }) {
         {!!guidedResults.length && (
           <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {guidedResults.map(t => (
-              <button key={t.code} onClick={()=>onNav('type',{ code: t.code })} className={cls("border p-3 text-left", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}>
+              <button key={t.code} onClick={()=>onNav('type',{ code: t.code })} className={cls("card p-3 text-left") }>
                 <div className="flex items-baseline justify-between">
                   <div className="font-mono text-xl">{t.code}</div>
-                  <span className={cls("text-xs px-1.5 py-0.5 border", darkMode ? "border-gray-600 text-gray-300" : "border-neutral-300 text-neutral-800")}>{t.alias}</span>
+                  <span className="chip">{t.alias}</span>
                 </div>
                 <div className={cls("mt-1 text-sm", darkMode ? "text-gray-300" : "text-neutral-900")}>{t.fullName}</div>
                 <div className={cls("mt-2 text-xs", darkMode ? "text-gray-500" : "text-neutral-600")}>{t.quadra} · {t.temperament} · {t.leading}/{t.creative}</div>
@@ -1903,7 +1896,7 @@ function StartHere({ onNav, darkMode, types, glossary }) {
           <h3 className={cls("text-lg font-semibold", darkMode ? "text-white" : "text-black")}>Info elements at a glance</h3>
           <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
             {cheat.map(c => (
-              <div key={c.term} className={cls("border p-3", darkMode ? "border-gray-700" : "border-neutral-300")}>
+              <div key={c.term} className={cls("card p-3") }>
                 <div className={cls("font-mono", darkMode ? "text-white" : "text-black")}>{c.term}</div>
                 <div className={cls("mt-1 text-xs", darkMode ? "text-gray-400" : "text-neutral-900")}>{c.shortDef}</div>
               </div>
@@ -2059,7 +2052,7 @@ function TypeCompare({ types, duals, darkMode, initialA, initialB, onNav }) {
       </div>
       
       {/* Comparison Results */}
-      <div className="mt-6 border border-neutral-300 p-6 dark:border-gray-700">
+      <div className="mt-6 card p-6">
         <h2 className={cls("text-2xl font-semibold", darkMode ? "text-white" : "text-black")}>Comparison</h2>
         
         {isDual && (
@@ -2100,22 +2093,22 @@ function TypeCompare({ types, duals, darkMode, initialA, initialB, onNav }) {
         <div className="mt-4">
           <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Function Comparison</h3>
           <div className="mt-2 overflow-x-auto">
-            <table className="min-w-full divide-y dark:divide-gray-700 divide-neutral-300">
+            <table className="table">
               <thead>
                 <tr>
-                  <th className={cls("py-2 text-left text-xs font-medium", darkMode ? "text-gray-400" : "text-neutral-500")}>Function</th>
-                  <th className={cls("py-2 text-left text-xs font-medium", darkMode ? "text-gray-400" : "text-neutral-500")}>{a.code}</th>
-                  <th className={cls("py-2 text-left text-xs font-medium", darkMode ? "text-gray-400" : "text-neutral-500")}>{b.code}</th>
-                  <th className={cls("py-2 text-left text-xs font-medium", darkMode ? "text-gray-400" : "text-neutral-500")}>Match</th>
+                  <th>Function</th>
+                  <th>{a.code}</th>
+                  <th>{b.code}</th>
+                  <th>Match</th>
                 </tr>
               </thead>
-              <tbody className="divide-y dark:divide-gray-700 divide-neutral-300">
+              <tbody>
                 {functionComparison.map((func, index) => (
                   <tr key={index}>
-                    <td className={cls("py-2 text-sm", darkMode ? "text-gray-300" : "text-black")}>{func.name}</td>
-                    <td className={cls("py-2 font-mono text-sm", darkMode ? "text-white" : "text-black")}>{func.a}</td>
-                    <td className={cls("py-2 font-mono text-sm", darkMode ? "text-white" : "text-black")}>{func.b}</td>
-                    <td className="py-2 text-sm">
+                    <td className={cls("text-sm", darkMode ? "text-gray-300" : "text-black")}>{func.name}</td>
+                    <td className={cls("font-mono text-sm", darkMode ? "text-white" : "text-black")}>{func.a}</td>
+                    <td className={cls("font-mono text-sm", darkMode ? "text-white" : "text-black")}>{func.b}</td>
+                    <td className="text-sm">
                       {func.same ? (
                         <span className={darkMode ? "text-green-400" : "text-green-600"}>✓ Match</span>
                       ) : (
