@@ -31,19 +31,19 @@ function useData() {
   useEffect(() => {
     // Load core data
     Promise.all([
-      fetch("/data/types.json").then(r=>r.json()),
-      fetch("/data/glossary.json").then(r=>r.json()),
-      fetch("/data/relations.json").then(r=>r.json()),
+      fetch("data/types.json").then(r=>r.json()),
+      fetch("data/glossary.json").then(r=>r.json()),
+      fetch("data/relations.json").then(r=>r.json()),
     ]).then(([types, glossary, relations]) => {
       setData((d) => ({ ...d, types, glossary, relations, error: null }));
     }).catch(err => setData({ types: null, glossary: null, relations: null, meta: null, search: null, error: err.message }));
 
     // Load optional metadata (non-blocking)
-    fetch("/data/meta.json").then(r => r.ok ? r.json() : null)
+    fetch("data/meta.json").then(r => r.ok ? r.json() : null)
       .then(meta => { if (meta) setData(d => ({ ...d, meta })); })
       .catch(() => {});
 
-    fetch("/data/search.json").then(r => r.ok ? r.json() : null)
+    fetch("data/search.json").then(r => r.ok ? r.json() : null)
       .then(idx => { if (idx && Array.isArray(idx.entries)) setData(d => ({ ...d, search: idx.entries })); })
       .catch(() => {});
   }, []);
