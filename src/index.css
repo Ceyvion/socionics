@@ -12,4 +12,21 @@
   :root.dark {
     color-scheme: dark;
   }
+
+  /* Ensure strong, readable defaults across themes */
+  html, body {
+    @apply antialiased;
+  }
+  body {
+    background-color: #ffffff;
+    color: #0a0a0a; /* near-black for high contrast */
+  }
+  :root.dark body {
+    background-color: #0b0f19; /* gray-900-ish */
+    color: #e5e7eb; /* gray-200/300 */
+  }
+
+  /* Light-mode readability: bump muted text contrast */
+  :root:not(.dark) .text-neutral-700 { color: #111827 !important; }
+  :root:not(.dark) .text-neutral-600 { color: #262626 !important; }
 }

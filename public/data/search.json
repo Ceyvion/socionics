@@ -1,0 +1,188 @@
+{
+  "entries": [
+    {
+      "kind": "type",
+      "id": "ILE",
+      "code": "ILE",
+      "fullName": "Intuitive Logical Extravert",
+      "alias": "ENTp",
+      "haystack": "ile intuitive logical extravert entp alpha ep ne ti"
+    },
+    {
+      "kind": "type",
+      "id": "SEI",
+      "code": "SEI",
+      "fullName": "Sensing Ethical Introvert",
+      "alias": "ISFp",
+      "haystack": "sei sensing ethical introvert isfp alpha ij si fe"
+    },
+    {
+      "kind": "type",
+      "id": "LII",
+      "code": "LII",
+      "fullName": "Logical Intuitive Introvert",
+      "alias": "INTj",
+      "haystack": "lii logical intuitive introvert intj alpha ij ti ne"
+    },
+    {
+      "kind": "type",
+      "id": "ESE",
+      "code": "ESE",
+      "fullName": "Ethical Sensing Extravert",
+      "alias": "ESFj",
+      "haystack": "ese ethical sensing extravert esfj alpha ej fe si"
+    },
+    {
+      "kind": "type",
+      "id": "SLE",
+      "code": "SLE",
+      "fullName": "Sensing Logical Extravert",
+      "alias": "ESTp",
+      "haystack": "sle sensing logical extravert estp beta ep se ti"
+    },
+    {
+      "kind": "type",
+      "id": "IEI",
+      "code": "IEI",
+      "fullName": "Intuitive Ethical Introvert",
+      "alias": "INFp",
+      "haystack": "iei intuitive ethical introvert infp beta ip ni fe"
+    },
+    {
+      "kind": "type",
+      "id": "LSI",
+      "code": "LSI",
+      "fullName": "Logical Sensing Introvert",
+      "alias": "ISTj",
+      "haystack": "lsi logical sensing introvert istj beta ij ti se"
+    },
+    {
+      "kind": "type",
+      "id": "EIE",
+      "code": "EIE",
+      "fullName": "Ethical Intuitive Extravert",
+      "alias": "ENFj",
+      "haystack": "eie ethical intuitive extravert enfj beta ej fe ni"
+    },
+    {
+      "kind": "type",
+      "id": "SEE",
+      "code": "SEE",
+      "fullName": "Sensing Ethical Extravert",
+      "alias": "ESFp",
+      "haystack": "see sensing ethical extravert esfp gamma ep se fi"
+    },
+    {
+      "kind": "type",
+      "id": "ILI",
+      "code": "ILI",
+      "fullName": "Intuitive Logical Introvert",
+      "alias": "INTp",
+      "haystack": "ili intuitive logical introvert intp gamma ip ni te"
+    },
+    {
+      "kind": "type",
+      "id": "ESI",
+      "code": "ESI",
+      "fullName": "Ethical Sensing Introvert",
+      "alias": "ISFj",
+      "haystack": "esi ethical sensing introvert isfj gamma ij fi se"
+    },
+    {
+      "kind": "type",
+      "id": "LIE",
+      "code": "LIE",
+      "fullName": "Logical Intuitive Extravert",
+      "alias": "ENTj",
+      "haystack": "lie logical intuitive extravert entj gamma ej te ni"
+    },
+    {
+      "kind": "type",
+      "id": "LSE",
+      "code": "LSE",
+      "fullName": "Logical Sensing Extravert",
+      "alias": "ESTj",
+      "haystack": "lse logical sensing extravert estj delta ej te si"
+    },
+    {
+      "kind": "type",
+      "id": "EII",
+      "code": "EII",
+      "fullName": "Ethical Intuitive Introvert",
+      "alias": "INFj",
+      "haystack": "eii ethical intuitive introvert infj delta ij fi ne"
+    },
+    {
+      "kind": "type",
+      "id": "SLI",
+      "code": "SLI",
+      "fullName": "Sensing Logical Introvert",
+      "alias": "ISTp",
+      "haystack": "sli sensing logical introvert istp delta ip si te"
+    },
+    {
+      "kind": "type",
+      "id": "IEE",
+      "code": "IEE",
+      "fullName": "Intuitive Ethical Extravert",
+      "alias": "ENFp",
+      "haystack": "iee intuitive ethical extravert enfp delta ep ne fi"
+    },
+    {
+      "kind": "gloss",
+      "id": "Ne",
+      "term": "Ne",
+      "shortDef": "Extroverted intuition - possibilities, patterns, divergence.",
+      "haystack": "ne extroverted intuition - possibilities, patterns, divergence."
+    },
+    {
+      "kind": "gloss",
+      "id": "Ni",
+      "term": "Ni",
+      "shortDef": "Introverted intuition - time, trajectories, convergence.",
+      "haystack": "ni introverted intuition - time, trajectories, convergence."
+    },
+    {
+      "kind": "gloss",
+      "id": "Se",
+      "term": "Se",
+      "shortDef": "Extroverted sensing - force, assertion, control of space.",
+      "haystack": "se extroverted sensing - force, assertion, control of space."
+    },
+    {
+      "kind": "gloss",
+      "id": "Si",
+      "term": "Si",
+      "shortDef": "Introverted sensing - comfort, calibration, bodily states.",
+      "haystack": "si introverted sensing - comfort, calibration, bodily states."
+    },
+    {
+      "kind": "gloss",
+      "id": "Te",
+      "term": "Te",
+      "shortDef": "Extroverted logic - efficiency, metrics, execution.",
+      "haystack": "te extroverted logic - efficiency, metrics, execution."
+    },
+    {
+      "kind": "gloss",
+      "id": "Ti",
+      "term": "Ti",
+      "shortDef": "Introverted logic - structure, definitions, consistency.",
+      "haystack": "ti introverted logic - structure, definitions, consistency."
+    },
+    {
+      "kind": "gloss",
+      "id": "Fe",
+      "term": "Fe",
+      "shortDef": "Extroverted ethics - shared feeling, expression, morale.",
+      "haystack": "fe extroverted ethics - shared feeling, expression, morale."
+    },
+    {
+      "kind": "gloss",
+      "id": "Fi",
+      "term": "Fi",
+      "shortDef": "Introverted ethics - bonds, values, personal distance.",
+      "haystack": "fi introverted ethics - bonds, values, personal distance."
+    }
+  ]
+}

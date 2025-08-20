@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import * as path from "node:path";
 import * as url from "node:url";
 import { load as cheerioLoad } from "cheerio";
+import { setTimeout as delay } from "node:timers/promises";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(__dirname, "..", "public", "data");
@@ -35,10 +36,32 @@ const TYPE_INFO = {
   "IEE": { fullName: "Intuitive Ethical Extravert", alias: "ENFp", quadra: "Delta", temperament: "EP", leading: "Ne", creative: "Fi" },
 };
 
+// Helper: fetch with timeout + retries
+async function fetchWithRetry(url, { timeoutMs = 8000, retries = 2 } = {}) {
+  let attempt = 0;
+  while (true) {
+    attempt++;
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, {
+        headers: { "User-Agent": "wikisocion-mvp-scraper/1.1" },
+        signal: controller.signal,
+      });
+      clearTimeout(t);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res;
+    } catch (e) {
+      clearTimeout(t);
+      if (attempt > retries + 1) throw new Error(`Failed to fetch ${url}: ${e.message}`);
+      await delay(400 * attempt); // simple backoff
+    }
+  }
+}
+
 // Helper: fetch and parse
 async function load(url) {
-  const res = await fetch(url, { headers: { "User-Agent": "wikisocion-mvp-scraper/1.0" } });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+  const res = await fetchWithRetry(url);
   const html = await res.text();
   return cheerioLoad(html);
 }
@@ -75,6 +98,7 @@ function dualKey(a,b){ return [a,b].sort().join("-"); }
 async function scrapeAll() {
   const base = "https://wikisocion.github.io/content";
   const types = [];
+  const generatedAt = new Date().toISOString();
   for (const code of TYPE_CODES) {
     const url = `${base}/${code}.html`;
     const $ = await load(url);
@@ -114,7 +138,29 @@ async function scrapeAll() {
   await fs.writeFile(path.join(OUT_DIR, "types.json"), JSON.stringify(types, null, 2));
   await fs.writeFile(path.join(OUT_DIR, "relations.json"), JSON.stringify(relations, null, 2));
   await fs.writeFile(path.join(OUT_DIR, "glossary.json"), JSON.stringify(glossary, null, 2));
-  console.log(`Wrote ${OUT_DIR}/types.json, relations.json, glossary.json`);
+
+  // Precomputed search index (simple, compact)
+  const entries = [];
+  for (const t of types) {
+    const hay = [t.code, t.fullName, t.alias, t.quadra, t.temperament, t.leading, t.creative].join(" ").toLowerCase();
+    entries.push({ kind: "type", id: t.code, code: t.code, fullName: t.fullName, alias: t.alias, haystack: hay });
+  }
+  for (const g of glossary) {
+    const hay = [g.term, g.shortDef].join(" ").toLowerCase();
+    entries.push({ kind: "gloss", id: g.term, term: g.term, shortDef: g.shortDef, haystack: hay });
+  }
+  await fs.writeFile(path.join(OUT_DIR, "search.json"), JSON.stringify({ entries }, null, 2));
+
+  const meta = {
+    generatedAt,
+    sources: {
+      types: `${base}/[TYPE].html`,
+      relations: "DUAL_PAIRS hardcoded (script)",
+      glossary: "Short definitions embedded in script",
+    },
+  };
+  await fs.writeFile(path.join(OUT_DIR, "meta.json"), JSON.stringify(meta, null, 2));
+  console.log(`Wrote ${OUT_DIR}/types.json, relations.json, glossary.json, search.json, meta.json`);
 }
 
 scrapeAll().catch(e => { console.error(e); process.exit(1); });

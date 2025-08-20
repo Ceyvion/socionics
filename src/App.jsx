@@ -27,15 +27,25 @@ import {
 
 // --- Data loading hook ---
 function useData() {
-  const [data, setData] = useState({ types: null, glossary: null, relations: null, error: null });
+  const [data, setData] = useState({ types: null, glossary: null, relations: null, meta: null, search: null, error: null });
   useEffect(() => {
+    // Load core data
     Promise.all([
       fetch("/data/types.json").then(r=>r.json()),
       fetch("/data/glossary.json").then(r=>r.json()),
       fetch("/data/relations.json").then(r=>r.json()),
     ]).then(([types, glossary, relations]) => {
-      setData({ types, glossary, relations, error: null });
-    }).catch(err => setData({ types: null, glossary: null, relations: null, error: err.message }));
+      setData((d) => ({ ...d, types, glossary, relations, error: null }));
+    }).catch(err => setData({ types: null, glossary: null, relations: null, meta: null, search: null, error: err.message }));
+
+    // Load optional metadata (non-blocking)
+    fetch("/data/meta.json").then(r => r.ok ? r.json() : null)
+      .then(meta => { if (meta) setData(d => ({ ...d, meta })); })
+      .catch(() => {});
+
+    fetch("/data/search.json").then(r => r.ok ? r.json() : null)
+      .then(idx => { if (idx && Array.isArray(idx.entries)) setData(d => ({ ...d, search: idx.entries })); })
+      .catch(() => {});
   }, []);
   return data;
 }
@@ -96,13 +106,59 @@ function runDevTests(types, glossary, relations) {
 }
 
 // --- App ---
+// --- Hash routing helpers ---
+function hashToRoute(hash) {
+  const raw = (hash || "").replace(/^#\/?/, "");
+  const parts = raw.split("/").filter(Boolean);
+  const [root, a, b] = parts;
+  switch (root) {
+    case undefined:
+    case "":
+      return { name: "home" };
+    case "start":
+    case "types":
+    case "relations":
+    case "theory":
+    case "functions":
+    case "library":
+    case "about":
+      return { name: root };
+    case "type":
+      return a ? { name: "type", code: a.toUpperCase() } : { name: "types" };
+    case "glossary":
+      return { name: "glossary", focus: a };
+    case "compare":
+      // Support optional pair: /compare/A/B
+      return { name: "compare", a: a ? a.toUpperCase() : undefined, b: b ? b.toUpperCase() : undefined };
+    default:
+      return { name: "home" };
+  }
+}
+
+function routeToHash(route) {
+  switch (route.name) {
+    case "home": return "#/";
+    case "start": return "#/start";
+    case "types": return "#/types";
+    case "type": return route.code ? `#/type/${route.code}` : "#/types";
+    case "relations": return "#/relations";
+    case "theory": return "#/theory";
+    case "functions": return "#/functions";
+    case "glossary": return route.focus ? `#/glossary/${route.focus}` : "#/glossary";
+    case "library": return "#/library";
+    case "about": return "#/about";
+    case "compare": return route.a && route.b ? `#/compare/${route.a}/${route.b}` : "#/compare";
+    default: return "#/";
+  }
+}
+
 export default function WikisocionMVP() {
-  const [route, setRoute] = useState({ name: "home" });
+  const [route, setRoute] = useState(() => (typeof window !== 'undefined' ? hashToRoute(window.location.hash) : { name: "home" }));
   const [query, setQuery] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   const searchRef = useRef(null);
-  
-  const { types, glossary, relations, error } = useData();
+
+  const { types, glossary, relations, meta, search, error } = useData();
   
   // Initialize dark mode based on system preference or localStorage
   useEffect(() => {
@@ -146,7 +202,45 @@ export default function WikisocionMVP() {
     }
   }, [types, glossary, relations]);
   
-  const navigate = (name, params = {}) => setRoute({ name, ...params });
+  // Hash routing
+  useEffect(() => {
+    const onHash = () => setRoute(hashToRoute(window.location.hash));
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  const navigate = (name, params = {}) => {
+    const next = { name, ...params };
+    setRoute(next);
+    const nextHash = routeToHash(next);
+    if (typeof window !== 'undefined' && window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
+  };
+
+  // Dynamic titles
+  useEffect(() => {
+    if (!types) return; // wait until we can render type names where needed
+    let title = "Wikisocion";
+    if (route.name === 'home') title = 'Wikisocion — Socionics, organized';
+    else if (route.name === 'types') title = 'Types — Wikisocion';
+    else if (route.name === 'type') {
+      const byCode = Object.fromEntries(types.map(t => [t.code, t]));
+      const t = route.code && byCode[route.code];
+      title = t ? `${t.code} — ${t.fullName} (${t.alias}) | Wikisocion` : 'Type — Wikisocion';
+    }
+    else if (route.name === 'relations') title = 'Relations — Wikisocion';
+    else if (route.name === 'glossary') title = route.focus ? `Glossary: ${route.focus} — Wikisocion` : 'Glossary — Wikisocion';
+    else if (route.name === 'compare') {
+      if (route.a && route.b) title = `Compare: ${route.a} vs ${route.b} — Wikisocion`;
+      else title = 'Compare — Wikisocion';
+    }
+    else if (route.name === 'functions') title = 'Functions — Wikisocion';
+    else if (route.name === 'theory') title = 'Theory — Wikisocion';
+    else if (route.name === 'library') title = 'Library — Wikisocion';
+    else if (route.name === 'about') title = 'About — Wikisocion';
+    document.title = title;
+  }, [route, types]);
   
   // Build results with useMemo (always called)
   const results = useMemo(() => {
@@ -158,18 +252,21 @@ export default function WikisocionMVP() {
     const q = query.trim().toLowerCase();
     if (!q) return [];
     
-    const fromTypes = types.filter((t) =>
-      [t.code, t.fullName, t.alias, t.quadra, t.leading, t.creative].some((v) =>
-        v.toLowerCase().includes(q)
-      )
-    ).map((t) => ({ kind: "type", id: t.code }));
-    
-    const fromGloss = glossary.filter((g) =>
-      [g.term, g.shortDef].some((v) => v.toLowerCase().includes(q))
-    ).map((g) => ({ kind: "gloss", id: g.term }));
-    
-    return [...fromTypes, ...fromGloss].slice(0, 10);
-  }, [query, types, glossary, relations, error]);
+    if (search && Array.isArray(search)) {
+      const matched = search.filter((e) => e.haystack && e.haystack.includes(q)).slice(0, 10);
+      return matched;
+    } else {
+      const fromTypes = types.filter((t) =>
+        [t.code, t.fullName, t.alias, t.quadra, t.leading, t.creative].some((v) =>
+          v.toLowerCase().includes(q)
+        )
+      ).map((t) => ({ kind: "type", id: t.code, code: t.code, fullName: t.fullName, alias: t.alias }));
+      const fromGloss = glossary.filter((g) =>
+        [g.term, g.shortDef].some((v) => v.toLowerCase().includes(q))
+      ).map((g) => ({ kind: "gloss", id: g.term, term: g.term, shortDef: g.shortDef }));
+      return [...fromTypes, ...fromGloss].slice(0, 10);
+    }
+  }, [query, types, glossary, relations, error, search]);
   
   // Show error state
   if (error) {
@@ -207,25 +304,62 @@ export default function WikisocionMVP() {
         setDarkMode={setDarkMode}
       />
       <main id="content" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-24">
-        {route.name === "home" && <Home onNav={navigate} types={types} />}
-        {route.name === "start" && <StartHere onNav={navigate} darkMode={darkMode} />}
+        {route.name === "home" && <Home onNav={navigate} types={types} darkMode={darkMode} />}
+        {route.name === "start" && <StartHere onNav={navigate} darkMode={darkMode} types={types} glossary={glossary} />}
         {route.name === "types" && <TypesIndex types={types} onOpen={(code) => navigate("type", { code })} />}
         {route.name === "type" && <TypeDetail types={types} duals={DUALS} code={route.code} onBack={() => navigate("types")} darkMode={darkMode} />}
         {route.name === "relations" && <Relations types={types} duals={DUALS} relations={relations} onNav={navigate} darkMode={darkMode} />}
         {route.name === "theory" && <Theory onNav={navigate} darkMode={darkMode} />}
         {route.name === "functions" && <FunctionExplorer glossary={glossary} types={types} darkMode={darkMode} />}
-        {route.name === "compare" && <TypeCompare types={types} duals={DUALS} darkMode={darkMode} />}
+        {route.name === "compare" && <TypeCompare types={types} duals={DUALS} darkMode={darkMode} initialA={route.a} initialB={route.b} onNav={navigate} />}
         {route.name === "glossary" && <Glossary glossary={glossary} focus={route.focus} darkMode={darkMode} />}
         {route.name === "library" && <Library darkMode={darkMode} />}
         {route.name === "about" && <About darkMode={darkMode} />}
       </main>
-      <SiteFooter darkMode={darkMode} />
+      <SiteFooter darkMode={darkMode} generatedAt={meta && meta.generatedAt} />
     </div>
   );
 }
 
 // --- Top bar ---
 function TopBar({ onNav, query, setQuery, searchRef, onResult, results, darkMode, setDarkMode }) {
+  const [selected, setSelected] = useState(0);
+
+  useEffect(() => { setSelected(0); }, [query]);
+
+  const onKeyDown = (e) => {
+    if (!results.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelected((i) => Math.min(i + 1, results.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelected((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const item = results[selected] || results[0];
+      if (item) onResult(item);
+    } else if (e.key === 'Escape') {
+      setQuery('');
+    }
+  };
+
+  const highlight = (text, q) => {
+    if (!q) return text;
+    const idx = text.toLowerCase().indexOf(q.toLowerCase());
+    if (idx === -1) return text;
+    const before = text.slice(0, idx);
+    const match = text.slice(idx, idx + q.length);
+    const after = text.slice(idx + q.length);
+    return (
+      <>
+        {before}
+        <mark className={darkMode ? 'bg-yellow-900 text-yellow-100' : 'bg-yellow-200'}>{match}</mark>
+        {after}
+      </>
+    );
+  };
+
   return (
     <header className={cls("sticky top-0 z-40 backdrop-blur border-b", darkMode ? "bg-gray-900/85 border-gray-700" : "bg-white/85 border-neutral-200")}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-4">
@@ -243,13 +377,8 @@ function TopBar({ onNav, query, setQuery, searchRef, onResult, results, darkMode
           {[
             ["Start", "start"],
             ["Types", "types"],
-            ["Relations", "relations"],
             ["Compare", "compare"],
-            ["Theory", "theory"],
-            ["Functions", "functions"],
             ["Glossary", "glossary"],
-            ["Library", "library"],
-            ["About", "about"],
           ].map(([label, route]) => (
             <button
               key={route}
@@ -267,24 +396,42 @@ function TopBar({ onNav, query, setQuery, searchRef, onResult, results, darkMode
               ref={searchRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={onKeyDown}
               placeholder={'Search: LII, "Model A", Fe... (/ to focus)'}
               className={cls("w-full px-3 py-2 text-sm outline-none bg-transparent", darkMode ? "text-white placeholder-gray-500" : "text-neutral-900 placeholder-neutral-500")}
             />
           </div>
           {!!results.length && (
-            <div className={cls("absolute mt-1 w-full shadow-sm", darkMode ? "bg-gray-800 border border-gray-700" : "bg-white border border-neutral-200")}>
+            <div className={cls("absolute mt-1 w-full shadow-sm", darkMode ? "bg-gray-800 border border-gray-700" : "bg-white border border-neutral-200")}
+                 role="listbox" aria-label="Search results">
               {results.map((r, i) => (
                 <button
                   key={i}
                   onClick={() => onResult(r)}
-                  className={cls("w-full text-left px-3 py-2 text-sm focus:outline-none", darkMode ? "hover:bg-gray-700 focus:bg-gray-700 text-white" : "hover:bg-neutral-50 focus:bg-neutral-50 text-black")}
-                >
-                  {r.kind === "type" ? (
-                    <span className="font-mono mr-2">{r.id}</span>
-                  ) : (
-                    <span className="mr-2">Glossary</span>
+                  onMouseEnter={() => setSelected(i)}
+                  className={cls(
+                    "w-full text-left px-3 py-2 text-sm focus:outline-none flex items-center gap-2",
+                    i === selected ? (darkMode ? "bg-gray-700" : "bg-neutral-100") : "",
+                    darkMode ? "text-white" : "text-black"
                   )}
-                  <ArrowRight className="inline h-3 w-3 ml-1" />
+                  role="option"
+                  aria-selected={i === selected}
+                >
+                  {r.kind === 'type' ? (
+                    <>
+                      <span className="font-mono mr-2">{highlight(r.code, query)}</span>
+                      <span className="flex-1">
+                        {highlight(r.fullName, query)}
+                        <span className={cls("ml-1 text-xs", darkMode ? "text-gray-300" : "text-neutral-600")}>({r.alias})</span>
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="mr-2">Glossary</span>
+                      <span className="font-semibold">{highlight(r.term, query)}</span>
+                      <span className={cls("ml-2 text-xs", darkMode ? "text-gray-300" : "text-neutral-600")}>{highlight(r.shortDef, query)}</span>
+                    </>
+                  )}
                 </button>
               ))}
             </div>
@@ -303,7 +450,7 @@ function TopBar({ onNav, query, setQuery, searchRef, onResult, results, darkMode
 }
 
 // --- Pages ---
-function Home({ onNav, types }) {
+function Home({ onNav, types, darkMode }) {
   return (
     <section className="pt-12">
       <div className="grid md:grid-cols-12 gap-8 items-center">
@@ -311,7 +458,7 @@ function Home({ onNav, types }) {
           <h1 className="text-5xl md:text-6xl font-semibold tracking-tight leading-[1.05]">
             Socionics, organized.
           </h1>
-          <p className={cls("mt-4 text-lg max-w-xl", darkMode ? "text-gray-300" : "text-neutral-700")}>
+          <p className={cls("mt-4 text-lg max-w-xl", darkMode ? "text-gray-300" : "text-neutral-900")}>
             Clear explanations of types, functions, and relations. Minimal jargon. Mobile-friendly. Open source.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -470,9 +617,9 @@ function TypesIndex({ types, onOpen }) {
             >
               <div className="flex items-baseline justify-between">
                 <div className="font-mono text-2xl dark:text-white text-black">{t.code}</div>
-                <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600 dark:text-gray-300 text-neutral-700">{t.alias}</span>
+                <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600 dark:text-gray-300 text-neutral-800">{t.alias}</span>
               </div>
-              <div className="mt-1 text-sm dark:text-gray-300 text-neutral-700">{t.fullName}</div>
+              <div className="mt-1 text-sm dark:text-gray-300 text-neutral-900">{t.fullName}</div>
               <div className="mt-2 flex gap-2 text-xs dark:text-gray-500 text-neutral-600">
                 <span className="px-1 border border-neutral-300 dark:border-gray-600">{t.quadra}</span>
                 <span className="px-1 border border-neutral-300 dark:border-gray-600">{t.temperament}</span>
@@ -516,14 +663,14 @@ function TypeCard({ type }) {
     >
       <div className="flex items-baseline justify-between">
         <div className="font-mono text-2xl dark:text-white text-black">{type.code}</div>
-        <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600 dark:text-gray-300 text-neutral-700">{type.alias}</span>
+        <span className="text-xs px-1.5 py-0.5 border border-neutral-300 dark:border-gray-600 dark:text-gray-300 text-neutral-800">{type.alias}</span>
       </div>
-      <div className="mt-1 text-sm dark:text-gray-300 text-neutral-700">{type.fullName}</div>
+      <div className="mt-1 text-sm dark:text-gray-300 text-neutral-900">{type.fullName}</div>
       <div className="mt-2 flex gap-2 text-xs dark:text-gray-500 text-neutral-600">
         <span className="px-1 border border-neutral-300 dark:border-gray-600">{type.quadra}</span>
         <span className="px-1 border border-neutral-300 dark:border-gray-600">{type.leading}/{type.creative}</span>
       </div>
-      <div className="mt-2 inline-flex items-center gap-1 text-xs dark:text-gray-500 text-neutral-700">
+      <div className="mt-2 inline-flex items-center gap-1 text-xs dark:text-gray-500 text-neutral-800">
         Open wiki <ExternalLink className="h-3 w-3" />
       </div>
     </a>
@@ -929,14 +1076,22 @@ function TypeDetail({ types, duals, code, onBack, darkMode }) {
       <div className="mt-4 grid lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8">
           <div className="border border-neutral-300 p-6 dark:border-gray-700">
-            <div className="flex items-baseline justify-between">
+            <div className="flex items-baseline justify-between gap-3">
               <h1 className={cls("text-4xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>
                 <span className="font-mono mr-2">{t.code}</span>
                 {t.fullName}
               </h1>
-              <span className={cls("text-xs px-1.5 py-0.5 border", darkMode ? "border-gray-600 text-gray-300" : "border-neutral-300 text-neutral-700")}>{t.alias}</span>
+              <div className="flex items-center gap-2">
+                <span className={cls("text-xs px-1.5 py-0.5 border", darkMode ? "border-gray-600 text-gray-300" : "border-neutral-300 text-neutral-700")}>{t.alias}</span>
+                <button
+                  onClick={() => { navigator.clipboard?.writeText(window.location.href); }}
+                  className={cls("text-xs px-2 py-1 border rounded", darkMode ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-neutral-300 text-black hover:bg-neutral-100")}
+                >
+                  Copy link
+                </button>
+              </div>
             </div>
-            <p className={cls("mt-4 max-w-prose", darkMode ? "text-gray-300" : "text-neutral-700")}>
+            <p className={cls("mt-4 max-w-prose", darkMode ? "text-gray-300" : "text-neutral-900")}>
               {content.summary}
             </p>
             
@@ -945,13 +1100,13 @@ function TypeDetail({ types, duals, code, onBack, darkMode }) {
               <div className="mt-4 grid sm:grid-cols-2 gap-4">
                 <div className="border border-neutral-300 p-4 dark:border-gray-700">
                   <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Typical Strengths</h3>
-                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-700")}>
+                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-900")}>
                     {content.characteristics.strengths}
                   </p>
                 </div>
                 <div className="border border-neutral-300 p-4 dark:border-gray-700">
                   <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Common Challenges</h3>
-                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-700")}>
+                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-900")}>
                     {content.characteristics.challenges}
                   </p>
                 </div>
@@ -963,19 +1118,19 @@ function TypeDetail({ types, duals, code, onBack, darkMode }) {
               <div className="mt-4 grid sm:grid-cols-3 gap-4">
                 <div className="border border-neutral-300 p-4 dark:border-gray-700">
                   <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Communication</h3>
-                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-700")}>
+                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-900")}>
                     {content.interaction.communication}
                   </p>
                 </div>
                 <div className="border border-neutral-300 p-4 dark:border-gray-700">
                   <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Work/Learning</h3>
-                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-700")}>
+                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-900")}>
                     {content.interaction.work}
                   </p>
                 </div>
                 <div className="border border-neutral-300 p-4 dark:border-gray-700">
                   <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Decision-making</h3>
-                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-700")}>
+                  <p className={cls("mt-2 text-sm", darkMode ? "text-gray-300" : "text-neutral-900")}>
                     {content.interaction.decision}
                   </p>
                 </div>
@@ -989,7 +1144,7 @@ function TypeDetail({ types, duals, code, onBack, darkMode }) {
             
             <div className="mt-8">
               <h2 className={cls("text-2xl font-semibold", darkMode ? "text-white" : "text-black")}>On-site Nuances</h2>
-              <p className={cls("mt-4 max-w-prose", darkMode ? "text-gray-300" : "text-neutral-700")}>
+              <p className={cls("mt-4 max-w-prose", darkMode ? "text-gray-300" : "text-neutral-900")}>
                 {content.nuances}
               </p>
             </div>
@@ -1026,7 +1181,7 @@ function TypeDetail({ types, duals, code, onBack, darkMode }) {
           
           <div className="mt-4 border border-neutral-300 p-4 dark:border-gray-700">
             <h3 className={cls("font-semibold", darkMode ? "text-white" : "text-black")}>Intertype Relations</h3>
-            <p className={cls("text-sm mt-1", darkMode ? "text-gray-400" : "text-neutral-700")}>
+            <p className={cls("text-sm mt-1", darkMode ? "text-gray-400" : "text-neutral-900")}>
               Key relations for {t.code}
             </p>
             <DualityList types={types} duals={duals} self={t.code} darkMode={darkMode} />
@@ -1336,7 +1491,7 @@ function Relations({ types, duals, relations, onNav, darkMode }) {
     </section>
   );
 }
-
+function Select({ types, label, value, setValue, darkMode }) {
   return (
     <label className="text-sm">
       <div className={cls("mb-1", darkMode ? "text-gray-400" : "text-neutral-600")}>{label}</div>
@@ -1571,10 +1726,10 @@ function About({ darkMode }) {
   return (
     <section className="pt-10 max-w-3xl">
       <h1 className={cls("text-3xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>About</h1>
-      <p className={cls("mt-2", darkMode ? "text-gray-400" : "text-neutral-700")}>
+      <p className={cls("mt-2", darkMode ? "text-gray-400" : "text-neutral-900")}>
         This is a community MVP that reorganizes Wikisocion content for clarity and mobile use while linking back to canonical pages. It follows accessibility best practices (keyboard navigation, high contrast, reduced motion respect) and a Swiss typographic aesthetic.
       </p>
-      <ul className={cls("mt-4 list-disc pl-6 text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>
+      <ul className={cls("mt-4 list-disc pl-6 text-sm", darkMode ? "text-gray-400" : "text-neutral-900")}>
         <li>Open source, non-commercial.</li>
         <li>Typography: Inter/Helvetica-like sans; minimal color with a single red accent.</li>
         <li>Privacy-friendly analytics suggested: simple counts for search success, time-to-type page, relation lookups.</li>
@@ -1583,9 +1738,9 @@ function About({ darkMode }) {
   );
 }
 
-function StartHere({ onNav, darkMode }) {
+function StartHere({ onNav, darkMode, types, glossary }) {
   const [step, setStep] = useState(1);
-  const totalSteps = 4;
+  const totalSteps = 3;
   const progress = (step / totalSteps) * 100;
   
   const next = () => setStep((s) => Math.min(totalSteps, s + 1));
@@ -1593,32 +1748,53 @@ function StartHere({ onNav, darkMode }) {
 
   // Step content with enhanced descriptions
   const steps = [
-    {
-      title: "Model A in one minute",
-      description: "Eight function positions. Two do the heavy lifting: Leading (your default lens) and Creative (your flexible tool).",
-      details: "Your Leading function is how you naturally see the world, while your Creative function is your adaptable tool for problem-solving."
-    },
-    {
-      title: "Information elements (the \"alphabet\")",
-      description: "Ne/Ni (intuition), Se/Si (sensing), Te/Ti (logic), Fe/Fi (ethics). Each type values some over others.",
-      details: "Think of these as different lenses for processing information - some focus on possibilities, others on facts."
-    },
-    {
-      title: "Skim types - spot your pattern",
-      description: "Browse the 16 cards. Which overview sounds like how you work by default? Open 2-3 candidates.",
-      details: "Don't worry about getting it perfect on the first try - socionics is about understanding patterns in yourself."
-    },
-    {
-      title: "Relations are about fit of values",
-      description: "Some pairs feel effortless (duality); others are energizing or challenging. Use relations as a lens, not a verdict.",
-      details: "Relationship compatibility in socionics is about complementary strengths, not just shared interests."
-    }
+    { title: "Basics in 60 seconds", description: "Model A: Leading + Creative. 8 positions total.", details: "Strongest functions shape what you notice and how you solve problems." },
+    { title: "Skim types", description: "Scan the 16 cards. Open the 2–3 that feel familiar.", details: "Look for default patterns, not interests or skills." },
+    { title: "Compare & sense‑check", description: "Put close candidates side‑by‑side.", details: "Compatibility is about values fit, not destiny. Context matters." }
   ];
+
+  // Guided explore filters
+  const [guided, setGuided] = useState({ quadra: "Any", temperament: "Any", leading: "Any" });
+  const guidedResults = useMemo(() => {
+    if (!types) return [];
+    return types.filter(t =>
+      (guided.quadra === 'Any' || t.quadra === guided.quadra) &&
+      (guided.temperament === 'Any' || t.temperament === guided.temperament) &&
+      (guided.leading === 'Any' || t.leading === guided.leading)
+    ).slice(0, 8);
+  }, [guided, types]);
+
+  // Cheat sheet for IEs
+  const IE_ORDER = ["Ne","Ni","Se","Si","Te","Ti","Fe","Fi"];
+  const cheat = useMemo(() => {
+    if (!glossary) return [];
+    const by = Object.fromEntries(glossary.map(g => [g.term, g.shortDef]));
+    return IE_ORDER.map(k => ({ term: k, shortDef: by[k] }));
+  }, [glossary]);
 
   return (
     <section className="pt-10 max-w-3xl">
       <h1 className={cls("text-3xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>Start here</h1>
-      
+      <p className={cls("mt-2", darkMode ? "text-gray-400" : "text-neutral-900")}>
+        Three small steps. Learn just enough, then explore without getting overwhelmed.
+      </p>
+
+      {/* Quick actions (bite-sized) */}
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <button onClick={() => onNav('theory')} className={cls("border p-3 text-left", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}>
+          <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>1. Learn</div>
+          <div className={cls("mt-1 flex items-center gap-2 font-semibold", darkMode ? "text-white" : "text-black")}><BookOpen className="h-4 w-4"/> Basics (1 min)</div>
+        </button>
+        <button onClick={() => onNav('types')} className={cls("border p-3 text-left", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}>
+          <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>2. Explore</div>
+          <div className={cls("mt-1 flex items-center gap-2 font-semibold", darkMode ? "text-white" : "text-black")}><TypeIcon className="h-4 w-4"/> Browse types</div>
+        </button>
+        <button onClick={() => onNav('compare')} className={cls("border p-3 text-left", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}>
+          <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>3. Decide</div>
+          <div className={cls("mt-1 flex items-center gap-2 font-semibold", darkMode ? "text-white" : "text-black")}><Rows className="h-4 w-4"/> Compare two</div>
+        </button>
+      </div>
+
       {/* Progress bar */}
       <div className="mt-6 w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
         <div 
@@ -1626,7 +1802,7 @@ function StartHere({ onNav, darkMode }) {
           style={{ width: `${progress}%` }}
         ></div>
       </div>
-      <div className={cls("text-right text-xs mt-1", darkMode ? "text-gray-400" : "text-gray-500")}>
+      <div className={cls("text-right text-xs mt-1", darkMode ? "text-gray-400" : "text-gray-500")}> 
         Step {step} of {totalSteps}
       </div>
 
@@ -1647,11 +1823,11 @@ function StartHere({ onNav, darkMode }) {
           >
             <div className={cls("text-xs uppercase tracking-wide", darkMode ? "text-gray-500" : "text-neutral-500")}>Step {index + 1}</div>
             <div className={cls("text-lg font-semibold", darkMode ? "text-white" : "text-black")}>{s.title}</div>
-            <p className={cls("mt-1 text-sm", darkMode ? "text-gray-400" : "text-neutral-700")}>
+            <p className={cls("mt-1 text-sm", darkMode ? "text-gray-400" : "text-neutral-900")}> 
               {s.description}
             </p>
             {step === index + 1 && (
-              <p className={cls("mt-2 text-sm italic", darkMode ? "text-gray-500" : "text-neutral-700")}>
+              <p className={cls("mt-2 text-sm italic", darkMode ? "text-gray-500" : "text-neutral-900")}> 
                 {s.details}
               </p>
             )}
@@ -1683,13 +1859,87 @@ function StartHere({ onNav, darkMode }) {
           </button>
         )}
       </div>
+
+      {/* Advanced (collapsed by default) */}
+      <details className="mt-10">
+        <summary className={cls("cursor-pointer select-none text-sm", darkMode ? "text-gray-300 hover:text-white" : "text-neutral-700 hover:text-black")}>Advanced: filters and cheat sheet (optional)</summary>
+        <div className="mt-4 text-sm">Choose any that apply to narrow results.</div>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label className="text-sm">
+            <div className={cls("mb-1", darkMode ? "text-gray-400" : "text-neutral-600")}>Quadra</div>
+            <select value={guided.quadra} onChange={(e)=>setGuided(g=>({ ...g, quadra: e.target.value }))} className={cls("w-full border px-2 py-2", darkMode ? "border-gray-700 bg-gray-800 text-white" : "border-neutral-300 text-black")}>
+              {["Any","Alpha","Beta","Gamma","Delta"].map(x => <option key={x} className={darkMode ? 'bg-gray-800':''}>{x}</option>)}
+            </select>
+          </label>
+          <label className="text-sm">
+            <div className={cls("mb-1", darkMode ? "text-gray-400" : "text-neutral-600")}>Temperament</div>
+            <select value={guided.temperament} onChange={(e)=>setGuided(g=>({ ...g, temperament: e.target.value }))} className={cls("w-full border px-2 py-2", darkMode ? "border-gray-700 bg-gray-800 text-white" : "border-neutral-300 text-black")}> 
+              {["Any","EP","EJ","IP","IJ"].map(x => <option key={x} className={darkMode ? 'bg-gray-800':''}>{x}</option>)}
+            </select>
+          </label>
+          <label className="text-sm">
+            <div className={cls("mb-1", darkMode ? "text-gray-400" : "text-neutral-600")}>Leading function</div>
+            <select value={guided.leading} onChange={(e)=>setGuided(g=>({ ...g, leading: e.target.value }))} className={cls("w-full border px-2 py-2", darkMode ? "border-gray-700 bg-gray-800 text-white" : "border-neutral-300 text-black")}> 
+              {["Any","Ne","Ni","Se","Si","Te","Ti","Fe","Fi"].map(x => <option key={x} className={darkMode ? 'bg-gray-800':''}>{x}</option>)}
+            </select>
+          </label>
+        </div>
+        {!!guidedResults.length && (
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {guidedResults.map(t => (
+              <button key={t.code} onClick={()=>onNav('type',{ code: t.code })} className={cls("border p-3 text-left", darkMode ? "border-gray-700 hover:bg-gray-800" : "border-neutral-300 hover:bg-neutral-50")}>
+                <div className="flex items-baseline justify-between">
+                  <div className="font-mono text-xl">{t.code}</div>
+                  <span className={cls("text-xs px-1.5 py-0.5 border", darkMode ? "border-gray-600 text-gray-300" : "border-neutral-300 text-neutral-800")}>{t.alias}</span>
+                </div>
+                <div className={cls("mt-1 text-sm", darkMode ? "text-gray-300" : "text-neutral-900")}>{t.fullName}</div>
+                <div className={cls("mt-2 text-xs", darkMode ? "text-gray-500" : "text-neutral-600")}>{t.quadra} · {t.temperament} · {t.leading}/{t.creative}</div>
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Cheat sheet */}
+        <div className="mt-8">
+          <h3 className={cls("text-lg font-semibold", darkMode ? "text-white" : "text-black")}>Info elements at a glance</h3>
+          <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {cheat.map(c => (
+              <div key={c.term} className={cls("border p-3", darkMode ? "border-gray-700" : "border-neutral-300")}>
+                <div className={cls("font-mono", darkMode ? "text-white" : "text-black")}>{c.term}</div>
+                <div className={cls("mt-1 text-xs", darkMode ? "text-gray-400" : "text-neutral-900")}>{c.shortDef}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tips */}
+        <div className="mt-8">
+          <h3 className={cls("text-lg font-semibold", darkMode ? "text-white" : "text-black")}>Tips</h3>
+          <ul className={cls("mt-2 list-disc pl-6 text-sm", darkMode ? "text-gray-400" : "text-neutral-900")}> 
+            <li>Use compare to disambiguate close candidates (e.g., LII vs ILI).</li>
+            <li>Prefer patterns over traits; avoid mistyping from hobbies or jobs.</li>
+            <li>Relations describe fit of values, not destiny. Context matters.</li>
+          </ul>
+        </div>
+      </details>
     </section>
   );
 }
 
-function TypeCompare({ types, duals, darkMode }) {
-  const [typeA, setTypeA] = useState("ILE");
-  const [typeB, setTypeB] = useState("SEI");
+function TypeCompare({ types, duals, darkMode, initialA, initialB, onNav }) {
+  const [typeA, setTypeA] = useState(initialA || "ILE");
+  const [typeB, setTypeB] = useState(initialB || "SEI");
+
+  useEffect(() => {
+    if (initialA) setTypeA(initialA);
+  }, [initialA]);
+  useEffect(() => {
+    if (initialB) setTypeB(initialB);
+  }, [initialB]);
+
+  useEffect(() => {
+    if (onNav) onNav('compare', { a: typeA, b: typeB });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeA, typeB]);
   
   const byCode = Object.fromEntries(types.map((t) => [t.code, t]));
   const a = byCode[typeA];
@@ -1711,10 +1961,23 @@ function TypeCompare({ types, duals, darkMode }) {
     { name: "Creative Function", a: a.creative, b: b.creative, same: a.creative === b.creative },
   ];
   
+  const copyLink = async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('Link copied to clipboard');
+    } catch {
+      // Fallback
+    }
+  };
+
   return (
     <section className="pt-10">
-      <h1 className={cls("text-3xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>Type Comparison</h1>
-      <p className={cls("mt-2", darkMode ? "text-gray-400" : "text-neutral-700")}>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className={cls("text-3xl font-semibold tracking-tight", darkMode ? "text-white" : "text-black")}>Type Comparison</h1>
+        <button onClick={copyLink} className={cls("text-sm px-3 py-1 border rounded", darkMode ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-neutral-300 text-black hover:bg-neutral-100")}>Copy link</button>
+      </div>
+      <p className={cls("mt-2", darkMode ? "text-gray-400" : "text-neutral-900")}>
         Compare two socionics types side by side to see their similarities and differences.
       </p>
       
@@ -1870,7 +2133,7 @@ function TypeCompare({ types, duals, darkMode }) {
   );
 }
 
-function SiteFooter({ darkMode }) {
+function SiteFooter({ darkMode, generatedAt }) {
   return (
     <footer className={cls("border-t py-10 mt-16", darkMode ? "border-gray-700" : "border-neutral-200")}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-sm">
@@ -1878,6 +2141,9 @@ function SiteFooter({ darkMode }) {
           <div>
             <div className={cls("font-semibold tracking-tight", darkMode ? "text-gray-300" : "text-black")}>Wikisocion — MVP</div>
             <div className={cls("", darkMode ? "text-gray-400" : "text-neutral-600")}>Swiss-inspired layout. Community prototype.</div>
+            {generatedAt && (
+              <div className={cls("mt-1", darkMode ? "text-gray-500" : "text-neutral-500")}>Last updated: {new Date(generatedAt).toLocaleString()}</div>
+            )}
           </div>
           <div className="flex gap-4">
             <a className={cls("hover:", darkMode ? "text-gray-300" : "text-neutral-900")} href="https://wikisocion.github.io/" target="_blank" rel="noopener">
