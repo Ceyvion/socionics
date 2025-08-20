@@ -281,8 +281,6 @@ export default function WikisocionMVP() {
   // build helpers the old constants provided
   const byCode = Object.fromEntries(types.map(t => [t.code, t]));
   const DUALS = new Set(relations.filter(r=>r.name==="Duality").map(r => [r.a, r.b].sort().join("-")));
-  
-  const relInfo = classifyRelation(typeA, typeB, duals);
   return (
     <div className={cls("min-h-screen", darkMode ? "bg-gray-900 text-white" : "bg-white text-black")}>
       <a
@@ -1381,10 +1379,11 @@ function Relations({ types, duals, relations, onNav, darkMode }) {
         <div className={cls("mt-1 text-2xl font-semibold", darkMode ? "text-white" : "text-black")}>
           {a} ↔ {b}
         </div>
+        {(() => { const relInfo = classifyRelation(typeA, typeB, duals); return (
         <div className="mt-2 flex flex-wrap gap-2 items-center">
           <span className="chip" style={{borderColor: relInfo.color, color: relInfo.color}}>{relInfo.key}</span>
           <RelationChips a={typeA} b={typeB} darkMode={darkMode} />
-        </div>
+        </div> ); })()}
       </div>
 
       {/* Visuals */}
