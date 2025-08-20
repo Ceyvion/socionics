@@ -514,7 +514,7 @@ function Home({ onNav, types, darkMode }) {
         </p>
         <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {types.map((t) => (
-            <TypeCard key={t.code} type={t} />
+            <TypeCard key={t.code} type={t} onOpen={(code) => onNav('type', { code })} />
           ))}
         </div>
       </div>
@@ -645,9 +645,53 @@ function TypesIndex({ types, onOpen }) {
   );
 }
 
-function TypeCard({ type }) {
+function TypeCard({ type, onOpen }) {
+  const rootRef = useRef(null);
+  useEffect(() => {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const a = window.anime;
+    if (reduce || !a || !rootRef.current) return;
+    a({
+      targets: rootRef.current,
+      opacity: [0, 1],
+      translateY: [6, 0],
+      duration: 360,
+      easing: 'easeOutQuad'
+    });
+  }, []);
+  if (onOpen) {
+    return (
+      <button
+        ref={rootRef}
+        onClick={() => onOpen(type.code)}
+        className="card px-4 py-3 text-left focus:outline-none focus:ring-2 focus:ring-red-600"
+      >
+        <div className="flex items-baseline justify-between">
+          <div className="font-mono text-2xl dark:text-white text-black">{type.code}</div>
+          <span className="chip">{type.alias}</span>
+        </div>
+        <div className="mt-1 text-sm dark:text-gray-300 text-neutral-900">{type.fullName}</div>
+        <div className="mt-2 flex gap-2 text-xs dark:text-gray-500 text-neutral-600">
+          <span className="chip">{type.quadra}</span>
+          <span className="chip">{type.leading}/{type.creative}</span>
+        </div>
+        <div className="mt-2 inline-flex items-center gap-1 text-xs dark:text-gray-500 text-neutral-800">
+          <a
+            href={type.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="underline hover:no-underline"
+          >
+            Open wiki <ExternalLink className="inline h-3 w-3" />
+          </a>
+        </div>
+      </button>
+    );
+  }
   return (
     <a
+      ref={rootRef}
       href={type.href}
       target="_blank"
       rel="noopener noreferrer"
@@ -1400,8 +1444,8 @@ function Relations({ types, duals, relations, onNav, darkMode }) {
           />
         </div>
         <div className="lg:col-span-4 card p-4">
-          <h2 className={cls("text-lg font-semibold", darkMode ? "text-white" : "text-black")}>Function Rings</h2>
-          <FunctionRings a={typeA} b={typeB} darkMode={darkMode} />
+          <h2 className={cls("text-lg font-semibold", darkMode ? "text-white" : "text-black")}>Function Interlock</h2>
+          <FunctionInterlock a={typeA} b={typeB} darkMode={darkMode} />
         </div>
       </div>
     </section>
@@ -1481,6 +1525,8 @@ function RadialRelations({ types, activeA, activeB, onSelectB, darkMode, duals }
   const size = 420;
   const cx = size/2, cy = size/2;
   const R = 160; // node radius from center
+  const [highlight, setHighlight] = useState(null); // relation filter
+  const svgRef = useRef(null);
   const aIndexRaw = types.findIndex(t => t.code === activeA);
   const aIndex = aIndexRaw < 0 ? 0 : aIndexRaw;
   const ordered = [...types.slice(aIndex), ...types.slice(0, aIndex)];
@@ -1502,9 +1548,38 @@ function RadialRelations({ types, activeA, activeB, onSelectB, darkMode, duals }
     return `M ${x1},${y1} C ${c1x},${c1y} ${c2x},${c2y} ${x2},${y2}`;
   };
 
+  useEffect(() => {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const anim = window.anime;
+    if (reduce || !anim || !svgRef.current) return;
+    // draw edges
+    const edges = svgRef.current.querySelectorAll('path[data-edge]');
+    anim({
+      targets: edges,
+      strokeDashoffset: [anim.setDashoffset, 0],
+      duration: 520,
+      delay: anim.stagger(16),
+      easing: 'easeOutCubic'
+    });
+    // pulse halo for selected B
+    const halo = svgRef.current.querySelector('circle[data-halo]');
+    if (halo) {
+      anim.remove(halo);
+      const baseR = parseFloat(halo.getAttribute('r')) || 10;
+      anim({
+        targets: halo,
+        r: [baseR, baseR + 3],
+        duration: 900,
+        easing: 'easeInOutSine',
+        direction: 'alternate',
+        loop: 2
+      });
+    }
+  }, [activeB, highlight]);
+
   return (
     <div className="w-full overflow-x-auto">
-      <svg width="100%" height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Radial relations map">
+      <svg ref={svgRef} width="100%" height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Radial relations map">
         <defs>
           <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
@@ -1521,11 +1596,15 @@ function RadialRelations({ types, activeA, activeB, onSelectB, darkMode, duals }
         {/* ribbons from A to others */}
         {nodes.slice(1).map((n, idx) => {
           const rel = classifyRelation(aNode.t, n.t, duals);
-          const color = n.t.code === activeB ? '#ef4444' : (rel.color || '#94a3b8');
+          const isActiveB = n.t.code === activeB;
+          const passFilter = !highlight || highlight === rel.key || isActiveB;
+          const baseColor = rel.color || '#94a3b8';
+          const color = baseColor;
           const d = pathFor(aNode.x, aNode.y, n.x, n.y);
-          const emphasis = n.t.code === activeB ? 2.5 : 1.25;
+          const strokeW = isActiveB ? 3 : 1.25;
+          const op = passFilter ? (isActiveB ? 0.95 : 0.65) : 0.15;
           return (
-            <path key={n.t.code} d={d} stroke={color} strokeWidth={emphasis} fill="none" opacity={n.t.code === activeB ? 0.95 : 0.5} filter="url(#softGlow)" />
+            <path data-edge="1" data-code={n.t.code} key={n.t.code} d={d} stroke={color} strokeWidth={strokeW} fill="none" opacity={op} filter="url(#softGlow)" />
           );
         })}
 
@@ -1538,6 +1617,10 @@ function RadialRelations({ types, activeA, activeB, onSelectB, darkMode, duals }
           const stroke = darkMode ? '#64748b' : '#94a3b8';
           return (
             <g key={n.t.code} onClick={() => !isA && onSelectB(n.t.code)} style={{cursor: isA ? 'default' : 'pointer'}}>
+              {/* halo for selected B */}
+              {isB && (
+                <circle data-halo="1" cx={n.x} cy={n.y} r={r+4} fill="none" stroke={darkMode? '#93c5fd':'#60a5fa'} strokeWidth="2" opacity="0.8" />
+              )}
               <circle cx={n.x} cy={n.y} r={r} fill={fill} stroke={stroke} />
               {/* labels */}
               {!isA && (
@@ -1545,70 +1628,233 @@ function RadialRelations({ types, activeA, activeB, onSelectB, darkMode, duals }
                   {n.t.code}
                 </text>
               )}
+              {/* tooltip via <title> for relation name */}
+              {!isA && (
+                <title>{classifyRelation(aNode.t, n.t, duals).key}</title>
+              )}
             </g>
           );
         })}
       </svg>
-      <div className={cls('mt-2 text-xs', darkMode? 'text-gray-400':'text-neutral-600')}>Tip: click a node to set Type B.</div>
+      <div className={cls('mt-2 text-xs', darkMode? 'text-gray-400':'text-neutral-600')}>Tip: click a node to set Type B. Click a legend chip to highlight a relation.</div>
+      {/* relation legend */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {Object.entries(RELATION_COLORS).filter(([k])=>k!=="Other").map(([name, color]) => (
+          <button
+            key={name}
+            onClick={() => setHighlight(h => h === name ? null : name)}
+            className="chip"
+            style={{
+              borderColor: color,
+              color: highlight === name ? (darkMode? '#111827':'#111827') : color,
+              background: highlight === name ? color : 'transparent'
+            }}
+            aria-pressed={highlight === name}
+          >
+            {name}
+          </button>
+        ))}
+        {highlight && (
+          <button onClick={() => setHighlight(null)} className={cls('chip', darkMode? 'hover:bg-gray-800':'hover:bg-neutral-100')}>
+            Clear
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
 function FunctionRings({ a, b, darkMode }) {
   if (!a || !b) return null;
-  const size = 240, cx = size/2, cy = size/2;
-  const innerR = 56, outerR = 84; // ring radii
+  const size = 260, cx = size/2, cy = size/2;
+  const rA = 86; // A ring radius
+  const rB = 112; // B ring radius
+  const thick = 12; // stroke width, gives smooth pill caps
+  const elems = ['Ne','Ni','Se','Si','Te','Ti','Fe','Fi'];
   const full = 2*Math.PI;
-  // We only render Leading (pos1) and Creative (pos2) slices for both
-  const slices = [
-    { label: 'Leading', pos: 0, a: a.leading, b: b.leading },
-    { label: 'Creative', pos: 1, a: a.creative, b: b.creative },
-  ];
-  const arc = (r, start, end) => {
+  const seg = full/elems.length;
+  const svgRef = useRef(null);
+
+  const angleFor = (el) => -Math.PI/2 + elems.indexOf(el) * seg + seg/2;
+  const arcPath = (r, start, end) => {
     const sx = cx + r*Math.cos(start), sy = cy + r*Math.sin(start);
     const ex = cx + r*Math.cos(end), ey = cy + r*Math.sin(end);
-    const large = end - start > Math.PI ? 1 : 0;
+    const large = Math.abs(end - start) > Math.PI ? 1 : 0;
     return `M ${sx} ${sy} A ${r} ${r} 0 ${large} 1 ${ex} ${ey}`;
   };
-  const band = (r1, r2, start, end) => {
-    // outer arc -> inner arc back
-    const o = arc(r2, start, end);
-    const irev = arc(r1, end, start);
-    return `${o} ${irev} Z`;
-  };
-  const segAngle = full/8;
+  // produce a short arc centered at angle
+  const pill = (r, center, span) => arcPath(r, center - span/2, center + span/2);
+  const baseStroke = darkMode ? '#1f2937' : '#e5e7eb';
+
+  useEffect(() => {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const anim = window.anime;
+    if (reduce || !anim || !svgRef.current) return;
+    const arcs = svgRef.current.querySelectorAll('[data-arc]');
+    anim({ targets: arcs, strokeDashoffset: [anim.setDashoffset, 0], duration: 520, delay: anim.stagger(80), easing: 'easeOutCubic' });
+    const connectors = svgRef.current.querySelectorAll('[data-connector]');
+    anim({ targets: connectors, opacity: [0, 0.9], duration: 360, delay: anim.stagger(100), easing: 'easeOutQuad' });
+  }, [a.code, b.code, darkMode]);
+
+  // highlight spans (in radians). Wider for leading, narrower for creative
+  const spanLead = seg * 0.7;
+  const spanCreative = seg * 0.5;
+
+  const aLeadAng = angleFor(a.leading);
+  const aCreativeAng = angleFor(a.creative);
+  const bLeadAng = angleFor(b.leading);
+  const bCreativeAng = angleFor(b.creative);
+
+  const aLeadCol = IE_COLORS[a.leading] || '#ef4444';
+  const aCreativeCol = IE_COLORS[a.creative] || '#ef4444';
+  const bLeadCol = IE_COLORS[b.leading] || '#3b82f6';
+  const bCreativeCol = IE_COLORS[b.creative] || '#3b82f6';
+
+  const matchLE = a.leading === b.leading || a.leading === b.creative;
+  const matchCE = a.creative === b.leading || a.creative === b.creative;
+
   return (
-    <svg width="100%" height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Function rings">
+    <svg ref={svgRef} width="100%" height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Function highlights">
+      <defs>
+        <filter id="ringsGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
       {/* base rings */}
-      <circle cx={cx} cy={cy} r={outerR+10} fill="none" stroke={darkMode? '#1f2937' : '#e5e7eb'} />
-      <circle cx={cx} cy={cy} r={innerR-10} fill="none" stroke={darkMode? '#1f2937' : '#e5e7eb'} />
-      {slices.map((s, i) => {
-        const start = -Math.PI/2 + s.pos*segAngle;
-        const end = start + segAngle;
-        const aColor = IE_COLORS[s.a] || '#64748b';
-        const bColor = IE_COLORS[s.b] || '#94a3b8';
-        const match = s.a === s.b;
-        return (
-          <g key={s.label}>
-            <path d={band(innerR, innerR+20, start, end)} fill={aColor} opacity={0.9} />
-            <path d={band(outerR, outerR+20, start, end)} fill={bColor} opacity={0.7} />
-            {match && (
-              <path d={arc(outerR+22, start, end)} stroke={darkMode? '#fca5a5':'#ef4444'} strokeWidth="2" fill="none" />
-            )}
-            {/* labels */}
-            <text x={cx} y={cy - (innerR+outerR)/2} textAnchor="middle" className={darkMode? 'fill-gray-300' : 'fill-neutral-700'} style={{fontSize: 11}}>
-              {s.label}
-            </text>
-          </g>
-        );
-      })}
-      {/* legends */}
+      <circle cx={cx} cy={cy} r={rA} fill="none" stroke={baseStroke} strokeWidth={thick} opacity={0.35} />
+      <circle cx={cx} cy={cy} r={rB} fill="none" stroke={baseStroke} strokeWidth={thick} opacity={0.35} />
+
+      {/* A highlights */}
+      <path data-arc d={pill(rA, aLeadAng, spanLead)} fill="none" stroke={aLeadCol} strokeWidth={thick} strokeLinecap="round" filter="url(#ringsGlow)" />
+      <path data-arc d={pill(rA, aCreativeAng, spanCreative)} fill="none" stroke={aCreativeCol} strokeWidth={thick-2} strokeLinecap="round" opacity={0.9} filter="url(#ringsGlow)" />
+      <title>A: {a.code} — lead {a.leading}, creative {a.creative}</title>
+
+      {/* B highlights */}
+      <path data-arc d={pill(rB, bLeadAng, spanLead)} fill="none" stroke={bLeadCol} strokeWidth={thick} strokeLinecap="round" filter="url(#ringsGlow)" />
+      <path data-arc d={pill(rB, bCreativeAng, spanCreative)} fill="none" stroke={bCreativeCol} strokeWidth={thick-2} strokeLinecap="round" opacity={0.9} filter="url(#ringsGlow)" />
+      <title>B: {b.code} — lead {b.leading}, creative {b.creative}</title>
+
+      {/* connectors at matching elements (subtle) */}
+      {a.leading === b.leading && (
+        <line data-connector x1={cx + rA*Math.cos(aLeadAng)} y1={cy + rA*Math.sin(aLeadAng)} x2={cx + rB*Math.cos(bLeadAng)} y2={cy + rB*Math.sin(bLeadAng)} stroke={aLeadCol} strokeWidth={2} opacity={0.85} />
+      )}
+      {a.leading === b.creative && (
+        <line data-connector x1={cx + rA*Math.cos(aLeadAng)} y1={cy + rA*Math.sin(aLeadAng)} x2={cx + rB*Math.cos(bCreativeAng)} y2={cy + rB*Math.sin(bCreativeAng)} stroke={aLeadCol} strokeWidth={2} opacity={0.85} />
+      )}
+      {a.creative === b.leading && (
+        <line data-connector x1={cx + rA*Math.cos(aCreativeAng)} y1={cy + rA*Math.sin(aCreativeAng)} x2={cx + rB*Math.cos(bLeadAng)} y2={cy + rB*Math.sin(bLeadAng)} stroke={aCreativeCol} strokeWidth={2} opacity={0.85} />
+      )}
+      {a.creative === b.creative && (
+        <line data-connector x1={cx + rA*Math.cos(aCreativeAng)} y1={cy + rA*Math.sin(aCreativeAng)} x2={cx + rB*Math.cos(bCreativeAng)} y2={cy + rB*Math.sin(bCreativeAng)} stroke={aCreativeCol} strokeWidth={2} opacity={0.85} />
+      )}
+
+      {/* legend */}
       <g>
-        <rect x={16} y={size-42} width={10} height={10} fill="#334155" />
-        <text x={30} y={size-34} className={darkMode? 'fill-gray-300':'fill-neutral-700'} style={{fontSize: 11}}>A: {a.code}</text>
-        <rect x={96} y={size-42} width={10} height={10} fill="#9ca3af" />
-        <text x={110} y={size-34} className={darkMode? 'fill-gray-300':'fill-neutral-700'} style={{fontSize: 11}}>B: {b.code}</text>
+        <rect x={16} y={size-44} width={10} height={10} fill={darkMode? '#ef4444':'#ef4444'} opacity={0.9} />
+        <text x={30} y={size-36} className={darkMode? 'fill-gray-300':'fill-neutral-700'} style={{fontSize: 11}}>A: {a.code}</text>
+        <rect x={100} y={size-44} width={10} height={10} fill={darkMode? '#3b82f6':'#3b82f6'} opacity={0.9} />
+        <text x={114} y={size-36} className={darkMode? 'fill-gray-300':'fill-neutral-700'} style={{fontSize: 11}}>B: {b.code}</text>
       </g>
+    </svg>
+  );
+}
+
+function FunctionInterlock({ a, b, darkMode }) {
+  if (!a || !b) return null;
+  const size = 260;
+  const padding = 16;
+  const boxW = 92, boxH = 28, r = 8;
+  const xLeftBox = padding, xRightBox = size - padding - boxW;
+  const yLead = 66, yCreative = 140;
+  const svgRef = useRef(null);
+
+  const baseLine = darkMode ? '#475569' : '#cbd5e1';
+  const textClass = darkMode ? 'fill-gray-200' : 'fill-neutral-800';
+  const labelClass = darkMode ? 'fill-gray-400' : 'fill-neutral-600';
+
+  const aLead = a.leading, aCreative = a.creative;
+  const bLead = b.leading, bCreative = b.creative;
+  const col = (el) => IE_COLORS[el] || '#64748b';
+
+  const roundedRect = (x,y,w,h,rr) => `M ${x+rr},${y} H ${x+w-rr} Q ${x+w},${y} ${x+w},${y+rr} V ${y+h-rr} Q ${x+w},${y+h} ${x+w-rr},${y+h} H ${x+rr} Q ${x},${y+h} ${x},${y+h-rr} V ${y+rr} Q ${x},${y} ${x+rr},${y} Z`;
+
+  const link = (x1,y1,x2,y2) => {
+    const cx1 = x1 + 60, cy1 = y1;
+    const cx2 = x2 - 60, cy2 = y2;
+    return `M ${x1},${y1} C ${cx1},${cy1} ${cx2},${cy2} ${x2},${y2}`;
+  };
+
+  const matches = [];
+  if (aLead === bLead) matches.push({ from: 'AL', to: 'BL', color: col(aLead) });
+  if (aLead === bCreative) matches.push({ from: 'AL', to: 'BC', color: col(aLead) });
+  if (aCreative === bLead) matches.push({ from: 'AC', to: 'BL', color: col(aCreative) });
+  if (aCreative === bCreative) matches.push({ from: 'AC', to: 'BC', color: col(aCreative) });
+
+  const pos = {
+    AL: { x: xLeftBox + boxW, y: yLead + boxH/2 },
+    AC: { x: xLeftBox + boxW, y: yCreative + boxH/2 },
+    BL: { x: xRightBox, y: yLead + boxH/2 },
+    BC: { x: xRightBox, y: yCreative + boxH/2 },
+  };
+
+  useEffect(() => {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const anim = window.anime;
+    if (reduce || !anim || !svgRef.current) return;
+    const lines = svgRef.current.querySelectorAll('[data-link]');
+    anim({ targets: lines, strokeDashoffset: [anim.setDashoffset, 0], duration: 520, delay: anim.stagger(60), easing: 'easeOutCubic' });
+    const matchesEls = svgRef.current.querySelectorAll('[data-match]');
+    anim({ targets: matchesEls, strokeDashoffset: [anim.setDashoffset, 0], duration: 600, delay: anim.stagger(100), easing: 'easeOutQuart' });
+  }, [a.code, b.code, darkMode]);
+
+  // Helper to get y by key
+  const point = (key) => pos[key];
+
+  return (
+    <svg ref={svgRef} width="100%" height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Function interlock">
+      {/* A boxes */}
+      <path d={roundedRect(xLeftBox, yLead, boxW, boxH, r)} fill={col(aLead)} opacity={0.9} />
+      <text x={xLeftBox + boxW/2} y={yLead + boxH/2 + 4} textAnchor="middle" className="fill-white" style={{fontSize: 12, fontWeight: 600}}>{aLead}</text>
+      <text x={xLeftBox + boxW/2} y={yLead - 8} textAnchor="middle" className={labelClass} style={{fontSize: 10}}>A · Lead</text>
+
+      <path d={roundedRect(xLeftBox, yCreative, boxW, boxH, r)} fill={col(aCreative)} opacity={0.85} />
+      <text x={xLeftBox + boxW/2} y={yCreative + boxH/2 + 4} textAnchor="middle" className="fill-white" style={{fontSize: 12, fontWeight: 600}}>{aCreative}</text>
+      <text x={xLeftBox + boxW/2} y={yCreative - 8} textAnchor="middle" className={labelClass} style={{fontSize: 10}}>A · Creative</text>
+
+      {/* B boxes */}
+      <path d={roundedRect(xRightBox, yLead, boxW, boxH, r)} fill={col(bLead)} opacity={0.9} />
+      <text x={xRightBox + boxW/2} y={yLead + boxH/2 + 4} textAnchor="middle" className="fill-white" style={{fontSize: 12, fontWeight: 600}}>{bLead}</text>
+      <text x={xRightBox + boxW/2} y={yLead - 8} textAnchor="middle" className={labelClass} style={{fontSize: 10}}>B · Lead</text>
+
+      <path d={roundedRect(xRightBox, yCreative, boxW, boxH, r)} fill={col(bCreative)} opacity={0.85} />
+      <text x={xRightBox + boxW/2} y={yCreative + boxH/2 + 4} textAnchor="middle" className="fill-white" style={{fontSize: 12, fontWeight: 600}}>{bCreative}</text>
+      <text x={xRightBox + boxW/2} y={yCreative - 8} textAnchor="middle" className={labelClass} style={{fontSize: 10}}>B · Creative</text>
+
+      {/* neutral guide lines (lead->lead, creative->creative) */}
+      <path data-link d={link(pos.AL.x, pos.AL.y, pos.BL.x, pos.BL.y)} stroke={baseLine} strokeWidth={2} fill="none" opacity={0.5} />
+      <path data-link d={link(pos.AC.x, pos.AC.y, pos.BC.x, pos.BC.y)} stroke={baseLine} strokeWidth={2} fill="none" opacity={0.5} />
+
+      {/* matches overlays */}
+      {matches.map((m, i) => (
+        <path
+          key={i}
+          data-match
+          d={link(point(m.from).x, point(m.from).y, point(m.to).x, point(m.to).y)}
+          stroke={m.color}
+          strokeWidth={3}
+          fill="none"
+          opacity={0.95}
+        />
+      ))}
+
+      {/* caption */}
+      <text x={size/2} y={size - 12} textAnchor="middle" className={labelClass} style={{fontSize: 11}}>
+        Leading and Creative alignment between {a.code} and {b.code}
+      </text>
     </svg>
   );
 }
