@@ -16,6 +16,27 @@ const TYPE_CODES = [
   "LSE","EII","SLI","IEE",
 ];
 
+// Map type codes to canonical page titles on MediaWiki (stable over time)
+// Source: common naming on wikisocion.net; adjust if the wiki changes titles
+const TYPE_PAGES = {
+  ILE: "ILE (ENTp)",
+  SEI: "SEI (ISFp)",
+  LII: "LII (INTj)",
+  ESE: "ESE (ESFj)",
+  SLE: "SLE (ESTp)",
+  IEI: "IEI (INFp)",
+  LSI: "LSI (ISTj)",
+  EIE: "EIE (ENFj)",
+  SEE: "SEE (ESFp)",
+  ILI: "ILI (INTp)",
+  ESI: "ESI (ISFj)",
+  LIE: "LIE (ENTj)",
+  LSE: "LSE (ESTj)",
+  EII: "EII (INFj)",
+  SLI: "SLI (ISTp)",
+  IEE: "IEE (ENFp)",
+};
+
 // Type information (hardcoded for accuracy since parsing is unreliable)
 const TYPE_INFO = {
   "ILE": { fullName: "Intuitive Logical Extravert", alias: "ENTp", quadra: "Alpha", temperament: "EP", leading: "Ne", creative: "Ti" },
@@ -66,6 +87,82 @@ async function load(url) {
   return cheerioLoad(html);
 }
 
+// ---- MediaWiki Action API helpers ----
+const MW_API = process.env.WIKISOCION_API || "https://wikisocion.net/w/api.php";
+const MW_PAGE_BASE = process.env.WIKISOCION_PAGE_BASE || "https://wikisocion.net/en/index.php?title=";
+const TYPES_CATEGORY = process.env.WIKISOCION_TYPES_CATEGORY || "Socionics types"; // cmtitle=Category:Socionics types
+
+async function mwGet(params) {
+  const q = new URLSearchParams({ format: "json", origin: "*", ...params });
+  const url = `${MW_API}?${q.toString()}`;
+  const res = await fetchWithRetry(url);
+  const json = await res.json();
+  if (json && json.error) throw new Error(`MediaWiki API error: ${json.error.info || json.error.code}`);
+  return json;
+}
+
+async function mwListTypePagesViaCategory() {
+  const titles = [];
+  let cmcontinue = undefined;
+  const cmtitle = `Category:${TYPES_CATEGORY}`;
+  do {
+    const json = await mwGet({
+      action: "query",
+      list: "categorymembers",
+      cmtitle,
+      cmlimit: "max",
+      cmtype: "page",
+      ...(cmcontinue ? { cmcontinue } : {}),
+    });
+    const members = json?.query?.categorymembers || [];
+    for (const m of members) titles.push(m.title);
+    cmcontinue = json?.continue?.cmcontinue;
+  } while (cmcontinue);
+  return titles;
+}
+
+async function mwParsePage(title) {
+  const json = await mwGet({
+    action: "parse",
+    page: title,
+    prop: "text|sections|revid|displaytitle",
+    formatversion: "2",
+    redirects: "true",
+    disableeditsection: "true",
+  });
+  return json?.parse;
+}
+
+function extractLeadParagraphFromHtml(html) {
+  const $ = cheerioLoad(html);
+  // Prefer first paragraph with some text; skip coordinates/infobox wrappers
+  const p = $("p").filter((_, el) => $(el).text().trim().length > 60).first();
+  const text = (p.text() || "").replace(/\s+/g, " ").trim();
+  return text || null;
+}
+
+async function scrapeTypeViaMediaWiki(code) {
+  const pageTitle = TYPE_PAGES[code] || code;
+  const parsed = await mwParsePage(pageTitle);
+  if (!parsed || !parsed.text) throw new Error(`No parse for ${pageTitle}`);
+  const overview = extractLeadParagraphFromHtml(parsed.text) || "Socionics type description.";
+  const info = TYPE_INFO[code];
+  const href = MW_PAGE_BASE + encodeURIComponent(pageTitle);
+  return {
+    code,
+    fullName: info.fullName,
+    alias: info.alias,
+    quadra: info.quadra,
+    temperament: info.temperament,
+    leading: info.leading,
+    creative: info.creative,
+    overview: overview.slice(0, 500),
+    href,
+    revId: parsed.revid,
+    title: parsed.displaytitle || pageTitle,
+  };
+}
+
 // Heuristic parsers (selectors vary across pages; keep robust & conservative)
 function parseType($, code) {
   const info = TYPE_INFO[code];
@@ -97,12 +194,57 @@ function dualKey(a,b){ return [a,b].sort().join("-"); }
 
 async function scrapeAll() {
   const base = "https://wikisocion.github.io/content";
-  const types = [];
   const generatedAt = new Date().toISOString();
-  for (const code of TYPE_CODES) {
-    const url = `${base}/${code}.html`;
-    const $ = await load(url);
-    types.push(parseType($, code));
+
+  // Choose source: mediawiki | github | auto (default)
+  const arg = process.argv.find(a => a.startsWith("--source="));
+  const source = arg ? arg.split("=")[1] : (process.env.WIKISOCION_SOURCE || "auto");
+
+  let types = [];
+  let usedSource = source;
+  const typesFromGitHub = async () => {
+    const acc = [];
+    for (const code of TYPE_CODES) {
+      const url = `${base}/${code}.html`;
+      const $ = await load(url);
+      acc.push(parseType($, code));
+    }
+    return acc;
+  };
+
+  if (source === "github") {
+    types = await typesFromGitHub();
+  } else if (source === "mediawiki") {
+    try {
+      const acc = [];
+      for (const code of TYPE_CODES) {
+        const t = await scrapeTypeViaMediaWiki(code);
+        acc.push(t);
+        // be gentle
+        await delay(120);
+      }
+      types = acc;
+    } catch (e) {
+      console.warn(`MediaWiki scrape failed (${e.message}); falling back to GitHub content.`);
+      usedSource = "github";
+      types = await typesFromGitHub();
+    }
+  } else {
+    // auto: try mediawiki, then fallback
+    try {
+      const acc = [];
+      for (const code of TYPE_CODES) {
+        const t = await scrapeTypeViaMediaWiki(code);
+        acc.push(t);
+        await delay(120);
+      }
+      types = acc;
+      usedSource = "mediawiki";
+    } catch (e) {
+      console.warn(`Auto mode: MediaWiki unavailable (${e.message}). Using GitHub pages.`);
+      usedSource = "github";
+      types = await typesFromGitHub();
+    }
   }
 
   // Minimal glossary (from Information Elements page)
@@ -154,7 +296,7 @@ async function scrapeAll() {
   const meta = {
     generatedAt,
     sources: {
-      types: `${base}/[TYPE].html`,
+      types: usedSource === "mediawiki" ? `${MW_API} (Action API: parse)` : `${base}/[TYPE].html`,
       relations: "DUAL_PAIRS hardcoded (script)",
       glossary: "Short definitions embedded in script",
     },

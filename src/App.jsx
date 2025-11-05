@@ -14,6 +14,7 @@ import {
   Moon,
   Sun,
 } from "lucide-react";
+import { fetchLiveWikisocionData, fetchLocalData } from "./data/loaders";
 
 /**
  * Wikisocion — Swiss-inspired MVP (single-file React)
@@ -27,25 +28,44 @@ import {
 
 // --- Data loading hook ---
 function useData() {
-  const [data, setData] = useState({ types: null, glossary: null, relations: null, meta: null, search: null, error: null });
+  const [data, setData] = useState({
+    types: null,
+    glossary: null,
+    relations: null,
+    meta: null,
+    search: null,
+    error: null,
+  });
   useEffect(() => {
-    // Load core data
-    Promise.all([
-      fetch("data/types.json").then(r=>r.json()),
-      fetch("data/glossary.json").then(r=>r.json()),
-      fetch("data/relations.json").then(r=>r.json()),
-    ]).then(([types, glossary, relations]) => {
-      setData((d) => ({ ...d, types, glossary, relations, error: null }));
-    }).catch(err => setData({ types: null, glossary: null, relations: null, meta: null, search: null, error: err.message }));
-
-    // Load optional metadata (non-blocking)
-    fetch("data/meta.json").then(r => r.ok ? r.json() : null)
-      .then(meta => { if (meta) setData(d => ({ ...d, meta })); })
-      .catch(() => {});
-
-    fetch("data/search.json").then(r => r.ok ? r.json() : null)
-      .then(idx => { if (idx && Array.isArray(idx.entries)) setData(d => ({ ...d, search: idx.entries })); })
-      .catch(() => {});
+    let cancelled = false;
+    async function load() {
+      try {
+        const live = await fetchLiveWikisocionData();
+        if (cancelled) return;
+        setData({ ...live, error: null });
+      } catch (liveError) {
+        console.warn("Live data fetch failed", liveError);
+        try {
+          const local = await fetchLocalData();
+          if (cancelled) return;
+          setData({ ...local, error: null });
+        } catch (localError) {
+          if (cancelled) return;
+          setData({
+            types: null,
+            glossary: null,
+            relations: null,
+            meta: null,
+            search: null,
+            error: `Live data unavailable (${liveError.message}). Fallback failed (${localError.message}).`,
+          });
+        }
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
   return data;
 }
