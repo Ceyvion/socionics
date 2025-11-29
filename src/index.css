@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,10 +7,31 @@
 @layer base {
   :root {
     color-scheme: light;
+    --paper: #f7f6f2;
+    --ink: #0c0c0c;
+    --muted: #3b3b3b;
+    --accent: #ff1b1b;
+    --accent-2: #f5c518;
+    --grid: rgba(12, 12, 12, 0.06);
   }
 
   :root.dark {
     color-scheme: dark;
+    --paper: #0c0c10;
+    --ink: #f4f4f6;
+    --muted: #9ea0a6;
+    --accent: #ff3b3b;
+    --accent-2: #f59e0b;
+    --grid: rgba(244, 244, 246, 0.08);
+  }
+
+  :root.alt-accent {
+    --accent: #f5c518;
+    --accent-2: #ff1b1b;
+  }
+
+  :root.grid-off body {
+    background-image: none;
   }
 
   /* Ensure strong, readable defaults across themes */
@@ -18,42 +39,213 @@
     @apply antialiased;
   }
   body {
-    background-color: #ffffff;
-    color: #0a0a0a; /* near-black for high contrast */
+    font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background-color: var(--paper);
+    color: var(--ink);
+    background-image:
+      linear-gradient(0deg, var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 26px 26px, 26px 26px;
+    background-position: 14px 18px, 14px 18px;
   }
   :root.dark body {
-    background-color: #0b0f19; /* gray-900-ish */
-    color: #e5e7eb; /* gray-200/300 */
+    background-color: var(--paper);
   }
 
-  /* Light-mode readability: bump muted text contrast */
-  :root:not(.dark) .text-neutral-700 { color: #111827 !important; }
-  :root:not(.dark) .text-neutral-600 { color: #262626 !important; }
-
   /* Selection color */
-  ::selection { background: #fecaca; color: #111827; } /* red-200 bg, neutral-900 text */
-  .dark ::selection { background: #7f1d1d; color: #f9fafb; } /* red-900 bg, gray-50 text */
+  ::selection { background: var(--accent); color: #ffffff; }
+
+  a { color: inherit; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Typographic tone */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  code, pre, .font-mono {
+    font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  }
 }
 
 @layer components {
-  .btn { @apply inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-red-600 transition-colors; }
-  .btn-primary { @apply bg-red-600 text-white hover:bg-red-700; }
-  .btn-secondary { @apply border border-neutral-300 text-black hover:bg-neutral-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800; }
-  .btn-ghost { @apply text-neutral-700 hover:bg-neutral-100 dark:text-gray-300 dark:hover:bg-gray-800; }
+  .light-surface { background-color: transparent; color: var(--ink); }
+  .dark-surface { background-color: transparent; color: var(--ink); }
 
-  .chip { @apply text-xs px-1.5 py-0.5 border rounded-sm border-neutral-300 text-neutral-800 dark:border-gray-600 dark:text-gray-300; }
+  .btn {
+    @apply inline-flex items-center gap-2 px-3 py-2 text-xs tracking-[0.18em] uppercase font-semibold focus:outline-none transition-transform;
+    border: 2px solid var(--ink);
+    border-radius: 0;
+    letter-spacing: 0.16em;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .btn-ghost {
+    color: var(--ink);
+    border-color: transparent;
+  }
 
-  .card { @apply border border-neutral-200 rounded-md bg-white hover:bg-neutral-50 hover:shadow-sm dark:bg-transparent dark:border-gray-700 dark:hover:bg-gray-800; }
+  .chip {
+    @apply text-[10px] font-semibold tracking-[0.2em] uppercase px-2 py-1;
+    border: 2px solid var(--ink);
+    background: #ffffff;
+  }
+  :root.dark .chip {
+    background: #0f1016;
+    border-color: var(--ink);
+    color: var(--ink);
+  }
 
-  .input-wrap { @apply flex items-center rounded-md border border-neutral-300 focus-within:ring-2 focus-within:ring-red-600 dark:border-gray-700 dark:bg-gray-800; }
-  .input { @apply w-full px-3 py-2 text-sm outline-none bg-transparent; }
+  .card {
+    border: 2px solid var(--ink);
+    background: color-mix(in srgb, var(--paper) 90%, transparent);
+    box-shadow: 8px 8px 0 var(--ink);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+  .card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 10px 10px 0 var(--accent);
+  }
+  :root.dark .card {
+    background: rgba(12, 12, 16, 0.9);
+    box-shadow: 8px 8px 0 rgba(255, 59, 59, 0.35);
+  }
 
-  .nav-link { @apply hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-600 rounded-sm; }
+  .input-wrap {
+    @apply flex items-center gap-2 px-2 py-1;
+    border: 2px solid var(--ink);
+    background: #ffffff;
+  }
+  :root.dark .input-wrap {
+    background: #0f1016;
+  }
+  .input { @apply w-full px-2 py-1 text-sm outline-none bg-transparent; }
 
-  .divider { @apply border-neutral-200 dark:border-gray-800; }
+  .nav-link {
+    @apply uppercase text-xs tracking-[0.18em] font-semibold;
+  }
+
+  .divider { @apply border-neutral-300 dark:border-gray-700; }
 
   .table { @apply w-full text-left border-collapse; }
-  .table th { @apply py-2 text-left text-xs uppercase tracking-wide font-medium text-neutral-500 dark:text-gray-400 border-b border-neutral-200 dark:border-gray-800; }
-  .table tbody tr:nth-child(odd) { @apply bg-neutral-50 dark:bg-gray-800; }
+  .table th {
+    @apply py-3 text-left text-[11px] uppercase tracking-[0.22em] font-semibold border-b;
+    border-color: var(--ink);
+  }
+  .table tbody tr:nth-child(odd) { background: color-mix(in srgb, var(--paper) 85%, transparent); }
   .table td { @apply py-2 align-top; }
+
+  .label-pill {
+    @apply uppercase text-[11px] tracking-[0.26em] font-semibold px-3 py-1 inline-flex items-center gap-2;
+    border: 2px solid var(--ink);
+    background: #ffffff;
+  }
+  :root.dark .label-pill {
+    background: #0f1016;
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
+  .stat-block {
+    @apply flex items-baseline gap-2;
+  }
+  .stat-number { @apply text-4xl font-semibold; line-height: 1; }
+  .stat-label { @apply uppercase text-[11px] tracking-[0.24em] font-semibold text-neutral-600 dark:text-gray-400; }
+
+  .ticker {
+    border-top: 4px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    overflow: hidden;
+  }
+  .ticker-track {
+    display: flex;
+    gap: 32px;
+    padding: 10px 16px;
+    animation: ticker-slide 22s linear infinite;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+  }
+  .ticker:hover .ticker-track { animation-play-state: paused; }
+  .ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+  }
+  .ticker-dot { font-size: 18px; line-height: 1; }
+
+  .rail-tag {
+    @apply uppercase text-[11px] tracking-[0.26em] font-semibold px-3 py-2;
+    border-left: 10px solid var(--ink);
+    background: #ffffff;
+  }
+  :root.dark .rail-tag {
+    background: #0f1016;
+    color: var(--ink);
+  }
+
+  .rail-heading {
+    border-left: 2px solid var(--ink);
+    padding-left: 12px;
+  }
+
+  .dropdown-panel {
+    animation: fade-up 160ms ease-out forwards;
+    transform-origin: top;
+  }
+
+  .print-sheet {
+    background: #ffffff;
+    color: #0c0c0c;
+  }
+  .print-card {
+    box-shadow: none;
+    border: 3px solid var(--ink);
+    background: #ffffff;
+  }
+  .print-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  .print-row {
+    border: 2px solid var(--ink);
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: "IBM Plex Mono", monospace;
+  }
+  .print-footer {
+    @apply uppercase text-[11px] tracking-[0.22em];
+  }
+
+  .no-print {}
+}
+
+@keyframes ticker-slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #ffffff !important; }
+  .card { box-shadow: none !important; }
 }
